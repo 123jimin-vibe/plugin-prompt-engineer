@@ -61,7 +61,7 @@ Ordered list of prompt entries. Each entry contributes to either the system or u
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `file` | string | Output file path. Each run appends one JSONL record. |
+| `file` | string | Output file path. Written as JSONL (one record per run). |
 
 ## Matrix sweep
 

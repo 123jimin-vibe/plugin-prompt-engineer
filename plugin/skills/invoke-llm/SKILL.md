@@ -21,10 +21,7 @@ Routing: `claude*` -> Anthropic, `gemini*` -> Google (OpenAI-compatible endpoint
 ```
 invoke.py "What is 2+2?"
 invoke.py -s "You are a poet" -u "Write about rain"
-invoke.py -S system.md -U prompt.md -m gpt-4o
-invoke.py -u "Hello" --json
-invoke.py -u "Hello" -q --json   # metadata only, no response text
-invoke.py -u "Hello" -o output.txt
+invoke.py -S system.md -U prompt.md -m gpt-5-mini --json
 ```
 
 | Flag | Description |
@@ -38,7 +35,7 @@ invoke.py -u "Hello" -o output.txt
 | `-t TEMP` | Temperature |
 | `--max-tokens N` | Max output tokens. Default: `4096` |
 | `-o FILE` | Write output to file (still prints to stdout) |
-| `-q` | Suppress response text in stdout |
+| `-q` | Suppress response text (metadata still shown with `--json`/`--toml`) |
 | `--json` | JSONL output with metadata |
 | `--toml` | TOML output with metadata |
 

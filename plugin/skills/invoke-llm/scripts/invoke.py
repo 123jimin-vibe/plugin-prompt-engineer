@@ -374,7 +374,7 @@ def main() -> None:
             return
 
         output_path = config.get("output", {}).get("file")
-        output_file = open(output_path, "a", encoding="utf-8") if output_path else None
+        output_file = open(output_path, "w", encoding="utf-8") if output_path else None
 
         errors: list[tuple[int, str]] = []
         results: list[dict] = []
