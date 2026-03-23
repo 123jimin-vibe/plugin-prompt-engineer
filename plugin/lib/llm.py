@@ -91,7 +91,7 @@ def invoke(
         model=model,
         messages=oai_messages,
         temperature=temperature,
-        max_tokens=max_tokens,
+        max_completion_tokens=max_tokens,
     )
     elapsed_ms = int((time.perf_counter() - start) * 1000)
 
