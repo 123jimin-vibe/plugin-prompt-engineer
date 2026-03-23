@@ -39,6 +39,10 @@ def is_up_to_date(version_file: Path, version: str) -> bool:
     return version_file.read_text().strip() == version
 
 
+def emit_system_message(message: str) -> None:
+    json.dump({"systemMessage": message}, sys.stdout)
+
+
 def install(plugin_root: Path, plugin_data: Path):
     version = get_plugin_version(plugin_root)
     version_file = plugin_data / "installed-version"
@@ -59,6 +63,10 @@ def install(plugin_root: Path, plugin_data: Path):
     except Exception:
         version_file.unlink(missing_ok=True)
         raise
+
+    emit_system_message(
+        f"prompt-engineer plugin dependencies installed (v{version})."
+    )
 
 
 if __name__ == "__main__":

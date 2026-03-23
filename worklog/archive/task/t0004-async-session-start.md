@@ -1,7 +1,7 @@
 +++
 id = "t0004"
 title = "Make SessionStart hook async and show system message on update"
-status = "pending"
+status = "done"
 tags = ["hooks", "performance", "ux"]
 modifies = ["s0003"]
 blocked_by = []
