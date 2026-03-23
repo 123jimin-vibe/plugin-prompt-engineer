@@ -1,7 +1,7 @@
 +++
 id = "t0002"
 title = "Instruct assistant to prefer repeated flags over multiple invocations"
-status = "pending"
+status = "done"
 tags = ["skill", "token-counter", "ux"]
 modifies = ["s0002"]
 blocked_by = []

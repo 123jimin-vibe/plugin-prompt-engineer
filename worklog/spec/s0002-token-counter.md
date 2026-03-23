@@ -36,6 +36,10 @@ Counts tokens in strings or files across one or more models/encodings.
 
 Requires `tiktoken` and `anthropic` (declared in `plugin/pyproject.toml`).
 
+## Assistant Guidance
+
+SKILL.md should nudge the assistant to combine repeatable flags into a single invocation rather than running the script multiple times. This produces comparison tables and avoids redundant process spawns.
+
 ## Anticipated Changes
 
 - TODO: implement `-s` section breakdown.
