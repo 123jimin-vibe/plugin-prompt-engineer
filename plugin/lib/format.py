@@ -13,7 +13,7 @@ def render_table(
         for i, cell in enumerate(row):
             widths[i] = max(widths[i], len(cell))
 
-    sep_line = "──".join("─" * w for w in widths)
+    sep_line = "--".join("-" * w for w in widths)
 
     # Normalize separator_before to a set of positive indices.
     if separator_before is None:

@@ -198,7 +198,7 @@ class TestCollectInputsPositional(unittest.TestCase):
         name, text = result[0]
         self.assertEqual(text, s)
         # Should NOT be truncated (exactly at limit).
-        self.assertNotIn("\u2026", name)
+        self.assertNotIn("...", name)
         self.assertEqual(len(name), 20)
 
     def test_21_chars_truncated(self):
@@ -208,16 +208,16 @@ class TestCollectInputsPositional(unittest.TestCase):
         name, text = result[0]
         self.assertEqual(text, s)
         # Should be truncated to 20 chars + ellipsis.
-        self.assertTrue(name.endswith("\u2026"))
-        self.assertEqual(len(name), 21)  # 20 content chars + 1 ellipsis char
+        self.assertTrue(name.endswith("..."))
+        self.assertEqual(len(name), 23)  # 20 content chars + 3 ellipsis chars
 
     def test_long_string_truncated(self):
         s = "x" * 100
         ns = parse_args([s])
         result = collect_inputs(ns)
         name, _ = result[0]
-        self.assertTrue(name.endswith("\u2026"))
-        self.assertEqual(len(name), 21)  # 20 + ellipsis
+        self.assertTrue(name.endswith("..."))
+        self.assertEqual(len(name), 23)  # 20 + ellipsis
 
 
 @unittest.skipUnless(_module_available, _missing_reason)

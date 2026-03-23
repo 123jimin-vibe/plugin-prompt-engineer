@@ -29,7 +29,7 @@ Counts tokens in strings or files across one or more models/encodings.
 
 ## Input Naming
 
-- Positional strings are truncated to 20 characters (with `…` suffix) for table display.
+- Positional strings are truncated to 20 characters (with `...` suffix) for table display.
 - Files use their filename.
 
 ## Dependencies

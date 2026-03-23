@@ -26,13 +26,6 @@ if _module_available:
         _module_available = False
 
 
-def _sep_line(widths: list[int]) -> str:
-    """Build the expected separator line for given column widths.
-
-    Each column gets '─' repeated to its width, joined by '  ' (two spaces).
-    """
-    return "  ".join("─" * w for w in widths)
-
 
 @unittest.skipUnless(_module_available, "plugin/lib/format.py not available")
 class TestRenderTableBasic(unittest.TestCase):
@@ -87,7 +80,7 @@ class TestHeaderSeparator(unittest.TestCase):
         separator = lines[1]
         # Must consist only of '─' and spaces (the column gap).
         self.assertTrue(
-            all(ch in ("─", " ") for ch in separator),
+            all(ch in ("-", " ") for ch in separator),
             f"Unexpected characters in separator: {separator!r}",
         )
 
@@ -214,7 +207,7 @@ class TestSeparatorBeforeNone(unittest.TestCase):
         )
         lines = result.split("\n")
         # Only the header separator (line index 1) should be a separator.
-        sep_count = sum(1 for l in lines if all(ch in ("─", " ") for ch in l))
+        sep_count = sum(1 for l in lines if all(ch in ("-", " ") for ch in l))
         self.assertEqual(sep_count, 1)
 
 
@@ -239,7 +232,7 @@ class TestSeparatorBeforeSingleInt(unittest.TestCase):
         self.assertEqual(len(lines), 6)
         # Line 4 should be a separator.
         self.assertTrue(
-            all(ch in ("─", " ") for ch in lines[4]),
+            all(ch in ("-", " ") for ch in lines[4]),
             f"Expected separator, got: {lines[4]!r}",
         )
 
@@ -253,7 +246,7 @@ class TestSeparatorBeforeSingleInt(unittest.TestCase):
         # header, header-sep, extra-sep, row0, row1 = 5
         self.assertEqual(len(lines), 5)
         # Line 2 should be a separator.
-        self.assertTrue(all(ch in ("─", " ") for ch in lines[2]))
+        self.assertTrue(all(ch in ("-", " ") for ch in lines[2]))
 
 
 @unittest.skipUnless(_module_available, "plugin/lib/format.py not available")
@@ -270,8 +263,8 @@ class TestSeparatorBeforeList(unittest.TestCase):
         # header, header-sep, row0, sep, row1, row2, sep, row3 = 8
         self.assertEqual(len(lines), 8)
         # Verify separator lines
-        self.assertTrue(all(ch in ("─", " ") for ch in lines[3]))
-        self.assertTrue(all(ch in ("─", " ") for ch in lines[6]))
+        self.assertTrue(all(ch in ("-", " ") for ch in lines[3]))
+        self.assertTrue(all(ch in ("-", " ") for ch in lines[6]))
 
 
 @unittest.skipUnless(_module_available, "plugin/lib/format.py not available")
@@ -288,7 +281,7 @@ class TestSeparatorBeforeNegativeIndex(unittest.TestCase):
         lines = result.split("\n")
         # header, header-sep, row0, row1, sep, row2 = 6
         self.assertEqual(len(lines), 6)
-        self.assertTrue(all(ch in ("─", " ") for ch in lines[4]))
+        self.assertTrue(all(ch in ("-", " ") for ch in lines[4]))
 
     def test_negative_in_list(self):
         """Negative index inside a list."""
@@ -299,7 +292,7 @@ class TestSeparatorBeforeNegativeIndex(unittest.TestCase):
         )
         lines = result.split("\n")
         self.assertEqual(len(lines), 6)
-        self.assertTrue(all(ch in ("─", " ") for ch in lines[4]))
+        self.assertTrue(all(ch in ("-", " ") for ch in lines[4]))
 
 
 @unittest.skipUnless(_module_available, "plugin/lib/format.py not available")
@@ -318,10 +311,10 @@ class TestExampleFromSpec(unittest.TestCase):
         )
         expected_lines = [
             "      Model  Tokens",
-            "───────────────────",
+            "-------------------",
             "claude-opus     842",
             "       gpt4     837",
-            "───────────────────",
+            "-------------------",
             "      Total     842",
         ]
         self.assertEqual(result, "\n".join(expected_lines))

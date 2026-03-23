@@ -28,7 +28,7 @@ def collect_inputs(args: argparse.Namespace) -> list[tuple[str, str]]:
     """Return [(name, text), ...] from parsed args."""
     inputs: list[tuple[str, str]] = []
     for s in args.strings:
-        name = s if len(s) <= MAX_NAME_LEN else s[:MAX_NAME_LEN] + "\u2026"
+        name = s if len(s) <= MAX_NAME_LEN else s[:MAX_NAME_LEN] + "..."
         inputs.append((name, s))
     for fpath in args.f:
         text = Path(fpath).read_text(encoding="utf-8")

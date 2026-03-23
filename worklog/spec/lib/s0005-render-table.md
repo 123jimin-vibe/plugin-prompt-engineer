@@ -25,7 +25,7 @@ render_table(
 
 - Column widths are computed from the maximum cell width in each column (including the header).
 - All columns are right-aligned by default.
-- A header separator (`─` repeated to column width, joined by `──`) is always printed between the header row and the first data row.
+- A header separator (`-` repeated to column width, joined by `--`) is always printed between the header row and the first data row.
 - `separator_before` inserts a horizontal rule before the row at the given index (or indices). Negative indices are supported.
 - Returns a single string with newline-separated lines (no trailing newline).
 
@@ -33,9 +33,9 @@ render_table(
 
 ```
       Model  Tokens
-───────────────────
+-------------------
 claude-opus    842
        gpt4    837
-───────────────────
+-------------------
       Total    842
 ```
