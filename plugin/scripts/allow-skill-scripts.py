@@ -89,7 +89,10 @@ def main() -> None:
     plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT", "")
     plugin_data = os.environ.get("CLAUDE_PLUGIN_DATA", "")
     if not plugin_root or not plugin_data:
-        return
+        raise RuntimeError(
+            "CLAUDE_PLUGIN_ROOT and/or CLAUDE_PLUGIN_DATA not set. "
+            "This hook must run in a context where plugin env vars are available."
+        )
 
     if not is_venv_python(parts[0], plugin_data):
         return
