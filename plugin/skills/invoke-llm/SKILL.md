@@ -6,11 +6,13 @@ Script: `invoke.py`
 
 ## Models
 
+Any model ID is accepted. Routing is prefix-based — not restricted to the examples below.
+
 | Provider | Models | Env var |
 |----------|--------|---------|
-| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6`, `claude-haiku-4-5-20251001` | `ANTHROPIC_API_KEY` |
-| OpenAI | `gpt-4o`, `gpt-5-mini`, `o3-mini` | `OPENAI_API_KEY` |
-| Google (Gemini) | `gemini-2.0-flash`, `gemini-pro` | `GEMINI_API_KEY` |
+| Anthropic | `claude-opus-4-6`, `claude-sonnet-4-6`, `claude-haiku-4-5` | `ANTHROPIC_API_KEY` |
+| OpenAI | `gpt-5.4`, `gpt-5-mini` | `OPENAI_API_KEY` |
+| Google | `gemini-3.1-pro-preview`, `gemini-3-flash-preview` | `GEMINI_API_KEY` |
 
 Routing: `claude*` -> Anthropic, `gemini*` -> Google (OpenAI-compatible endpoint), everything else -> OpenAI.
 
@@ -50,7 +52,7 @@ invoke.py -c run.toml --dry-run
 invoke.py -c run.toml --json
 ```
 
-TOML config with matrix sweep (cartesian product of array values). See spec s0006 for full schema.
+TOML config with matrix sweep (cartesian product of array values). See `references/config.md` for full schema.
 
 `--dry-run` prints dimension summary and total run count without making API calls.
 
