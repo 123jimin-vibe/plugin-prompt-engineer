@@ -1,7 +1,7 @@
 +++
 id = "t0005"
 title = "Reduce Python invocations in PreToolUse hook"
-status = "pending"
+status = "done"
 tags = ["hooks", "performance"]
 modifies = ["s0003"]
 blocked_by = []
