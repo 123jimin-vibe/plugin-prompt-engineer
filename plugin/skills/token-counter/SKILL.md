@@ -3,7 +3,9 @@ name: token-counter
 description: "Count tokens in strings or files."
 ---
 <skill id="prompt-engineer:token-counter">
-Script:
+Script: `${CLAUDE_SKILL_DIR}/scripts/count.py`
+
+Run with the plugin venv at `${CLAUDE_PLUGIN_DATA}/venv`.
 
 | Flag | Description |
 |------|-------------|

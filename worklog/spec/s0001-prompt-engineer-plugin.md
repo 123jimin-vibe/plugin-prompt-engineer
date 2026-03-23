@@ -14,6 +14,9 @@ Plugin root is `plugin/`. Name: `prompt-engineer`, version `0.0.1`.
 - `plugin/.claude-plugin/plugin.json` — plugin manifest (name, description, version).
 - `plugin/skills/` — each subdirectory is a skill exposed by the plugin.
 - `plugin/lib/` — shared library code used across skills (currently empty).
+- `plugin/requirements.txt` — Python dependencies.
+- `plugin/scripts/ensure-deps.py` — cross-platform dependency installer.
+- `plugin/hooks/hooks.json` — plugin hooks (SessionStart for dependency installation).
 
 ## Skills
 
@@ -27,9 +30,15 @@ Plugin root is `plugin/`. Name: `prompt-engineer`, version `0.0.1`.
 
 Python dependencies are declared in `plugin/requirements.txt` and installed into a virtual environment under `${CLAUDE_PLUGIN_DATA}`.
 
-A `SessionStart` hook compares the bundled `requirements.txt` against a cached copy in `${CLAUDE_PLUGIN_DATA}`. When they differ (or on first run), the hook creates/updates a venv and runs `pip install -r`. If installation fails, the cached copy is removed so the next session retries.
+A `SessionStart` hook runs `plugin/scripts/ensure-deps.py`, which:
 
-Scripts reference the venv via `${CLAUDE_PLUGIN_DATA}`.
+1. Compares the bundled `requirements.txt` against a cached copy in `${CLAUDE_PLUGIN_DATA}`.
+2. On mismatch (or first run), creates a venv at `${CLAUDE_PLUGIN_DATA}/venv` and pip installs.
+3. Copies the manifest on success; removes the cached copy on failure so the next session retries.
+
+Cross-platform: uses `venv/Scripts/pip` on Windows, `venv/bin/pip` elsewhere.
+
+Skill scripts reference the venv via `${CLAUDE_PLUGIN_DATA}/venv`.
 
 ## Plugin Variables
 
