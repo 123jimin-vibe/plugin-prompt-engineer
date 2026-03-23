@@ -30,7 +30,7 @@ _missing_reason = "count.py not loadable"
 if _module_available:
     import sys as _sys
     _lib_root = pathlib.Path(__file__).resolve().parents[3] / "plugin" / "lib"
-    for _lib_name, _lib_file in [("lib.format", "format.py"), ("lib.apikey", "apikey.py")]:
+    for _lib_name, _lib_file in [("lib.format", "format.py"), ("lib.apikey", "apikey.py"), ("lib.llm", "llm.py")]:
         _lib_path = str(_lib_root / _lib_file)
         _lib_spec = importlib.util.spec_from_file_location(_lib_name, _lib_path)
         if _lib_spec and _lib_spec.loader:
@@ -357,33 +357,33 @@ class TestCountTokensClaude(unittest.TestCase):
     def test_claude_without_api_key_exits_cleanly(self):
         """If ANTHROPIC_API_KEY is unset, calling with a Claude model should
         raise SystemExit with a message mentioning the env var."""
+        import lib.llm as _llm_mod
         env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
         with patch.dict(os.environ, env, clear=True):
-            # Reset cached client so the key check runs again.
-            old_client = getattr(_mod, "_anthropic_client", None)
-            _mod._anthropic_client = None
+            _llm_mod._clients.clear()
             try:
                 with self.assertRaises(SystemExit) as ctx:
                     count_tokens("hello", "claude-opus-4-6")
                 self.assertIn("ANTHROPIC_API_KEY", str(ctx.exception))
             finally:
-                _mod._anthropic_client = old_client
+                _llm_mod._clients.clear()
 
     def test_claude_with_mocked_api(self):
         """Mock the Anthropic client to avoid real API calls."""
+        import lib.llm as _llm_mod
+
         mock_response = MagicMock()
         mock_response.input_tokens = 42
 
         mock_client = MagicMock()
         mock_client.messages.count_tokens.return_value = mock_response
 
-        # Inject mock client into the module's cached client.
-        old_client = getattr(_mod, "_anthropic_client", None)
-        _mod._anthropic_client = mock_client
+        # Inject mock client into lib.llm's cache.
+        _llm_mod._clients["anthropic"] = mock_client
         try:
             result = count_tokens("hello world", "claude-opus-4-6")
         finally:
-            _mod._anthropic_client = old_client
+            _llm_mod._clients.clear()
 
         self.assertEqual(result, 42)
         mock_client.messages.count_tokens.assert_called_once()

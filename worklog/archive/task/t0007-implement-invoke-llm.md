@@ -1,7 +1,7 @@
 +++
 id = "t0007"
 title = "Implement invoke-llm skill"
-status = "pending"
+status = "done"
 tags = ["skill", "invoke-llm"]
 modifies = ["s0006"]
 +++

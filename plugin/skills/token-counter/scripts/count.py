@@ -6,8 +6,6 @@ from pathlib import Path
 
 MAX_NAME_LEN = 20
 
-_anthropic_client = None
-
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     """Parse CLI arguments."""
@@ -44,15 +42,10 @@ def is_claude_model(model: str) -> bool:
 def count_tokens(text: str, model: str) -> int:
     """Count tokens for *text* using the appropriate backend."""
     if is_claude_model(model):
-        global _anthropic_client
-        if _anthropic_client is None:
-            from lib.apikey import require_api_key
+        from lib.llm import create_client
 
-            require_api_key("anthropic")
-            from anthropic import Anthropic
-
-            _anthropic_client = Anthropic()
-        resp = _anthropic_client.messages.count_tokens(
+        client = create_client("anthropic")
+        resp = client.messages.count_tokens(
             model=model,
             messages=[{"role": "user", "content": text}],
         )
