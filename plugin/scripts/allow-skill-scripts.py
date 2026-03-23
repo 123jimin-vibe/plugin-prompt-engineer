@@ -19,6 +19,9 @@ def parse_hook_input() -> tuple[str, ...] | None:
     except (json.JSONDecodeError, EOFError):
         return None
 
+    if not isinstance(hook_input, dict):
+        return None
+
     command = hook_input.get("tool_input", {}).get("command", "")
     try:
         parts = shlex.split(command)
