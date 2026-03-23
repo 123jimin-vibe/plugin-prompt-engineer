@@ -24,18 +24,15 @@ Counts tokens in strings or files across one or more models/encodings.
 
 ## Dependencies
 
-Requires `tiktoken` (declared in `plugin/requirements.txt`, installed into venv at `${CLAUDE_PLUGIN_DATA}` — see [s0001](s0001-prompt-engineer-plugin.md#dependencies)).
+Requires `tiktoken` (declared in `plugin/pyproject.toml` — see [s0001](s0001-prompt-engineer-plugin.md#dependencies)).
 
 ## Script
 
-TODO: `plugin/skills/token-counter/scripts/token-count.py` — not yet implemented (`scripts/` directory is empty).
+`plugin/skills/token-counter/scripts/count.py` — stub that verifies tiktoken is importable.
 
-SKILL.md currently declares `Script:` with no path. Will need updating once the script exists.
-
-Invoked via the venv Python at `${CLAUDE_PLUGIN_DATA}/venv/bin/python` (or `Scripts/python` on Windows).
+Invoked via the plugin venv at `${CLAUDE_PLUGIN_DATA}/venv`.
 
 ## Anticipated Changes
 
 - TODO: implement the counting script.
 - TODO: determine which tokenizer library/API to use for each model.
-- TODO: update SKILL.md to reference the actual script path once implemented.

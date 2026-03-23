@@ -1,9 +1,9 @@
 """Ensure plugin Python dependencies are installed.
 
-Compares the bundled requirements.txt against a cached copy in the
+Compares the bundled pyproject.toml against a cached copy in the
 persistent data directory. On mismatch (or first run), creates a venv
-and installs dependencies. Removes the cached copy on failure so the
-next session retries.
+and installs the plugin in editable mode. Removes the cached copy on
+failure so the next session retries.
 """
 
 import filecmp
@@ -18,8 +18,8 @@ def main():
     plugin_root = os.environ["CLAUDE_PLUGIN_ROOT"]
     plugin_data = os.environ["CLAUDE_PLUGIN_DATA"]
 
-    bundled = os.path.join(plugin_root, "requirements.txt")
-    cached = os.path.join(plugin_data, "requirements.txt")
+    bundled = os.path.join(plugin_root, "pyproject.toml")
+    cached = os.path.join(plugin_data, "pyproject.toml")
     venv_dir = os.path.join(plugin_data, "venv")
 
     # Already up to date
@@ -37,7 +37,7 @@ def main():
 
     try:
         subprocess.run(
-            [pip, "install", "-r", bundled],
+            [pip, "install", "-e", plugin_root],
             check=True,
         )
         shutil.copy2(bundled, cached)
