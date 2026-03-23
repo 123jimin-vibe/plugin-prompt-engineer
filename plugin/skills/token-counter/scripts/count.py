@@ -46,6 +46,9 @@ def count_tokens(text: str, model: str) -> int:
     if is_claude_model(model):
         global _anthropic_client
         if _anthropic_client is None:
+            from lib.apikey import require_api_key
+
+            require_api_key("anthropic")
             from anthropic import Anthropic
 
             _anthropic_client = Anthropic()

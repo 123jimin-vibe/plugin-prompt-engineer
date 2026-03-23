@@ -25,18 +25,18 @@ _spec = importlib.util.spec_from_file_location("count", _MODULE_PATH)
 _module_available = _spec is not None and _spec.loader is not None
 _missing_reason = "count.py not loadable"
 
-# Pre-register lib.format in sys.modules so count.py's lazy import works
+# Pre-register lib.* in sys.modules so count.py's lazy imports work
 # outside the plugin venv.
 if _module_available:
     import sys as _sys
-    _fmt_path = str(
-        pathlib.Path(__file__).resolve().parents[3] / "plugin" / "lib" / "format.py"
-    )
-    _fmt_spec = importlib.util.spec_from_file_location("lib.format", _fmt_path)
-    if _fmt_spec and _fmt_spec.loader:
-        _fmt_mod = importlib.util.module_from_spec(_fmt_spec)
-        _fmt_spec.loader.exec_module(_fmt_mod)
-        _sys.modules["lib.format"] = _fmt_mod
+    _lib_root = pathlib.Path(__file__).resolve().parents[3] / "plugin" / "lib"
+    for _lib_name, _lib_file in [("lib.format", "format.py"), ("lib.apikey", "apikey.py")]:
+        _lib_path = str(_lib_root / _lib_file)
+        _lib_spec = importlib.util.spec_from_file_location(_lib_name, _lib_path)
+        if _lib_spec and _lib_spec.loader:
+            _lib_mod = importlib.util.module_from_spec(_lib_spec)
+            _lib_spec.loader.exec_module(_lib_mod)
+            _sys.modules[_lib_name] = _lib_mod
 
 if _module_available:
     try:
@@ -354,15 +354,20 @@ class TestCountTokensTiktoken(unittest.TestCase):
 class TestCountTokensClaude(unittest.TestCase):
     """Claude models use Anthropic API. Must mock or check error."""
 
-    def test_claude_without_api_key_errors(self):
+    def test_claude_without_api_key_exits_cleanly(self):
         """If ANTHROPIC_API_KEY is unset, calling with a Claude model should
-        raise an error (not silently return garbage)."""
-        env = os.environ.copy()
-        env.pop("ANTHROPIC_API_KEY", None)
+        raise SystemExit with a message mentioning the env var."""
+        env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
         with patch.dict(os.environ, env, clear=True):
-            # Re-importing or calling should produce a clean error.
-            with self.assertRaises(Exception):
-                count_tokens("hello", "claude-opus-4-6")
+            # Reset cached client so the key check runs again.
+            old_client = getattr(_mod, "_anthropic_client", None)
+            _mod._anthropic_client = None
+            try:
+                with self.assertRaises(SystemExit) as ctx:
+                    count_tokens("hello", "claude-opus-4-6")
+                self.assertIn("ANTHROPIC_API_KEY", str(ctx.exception))
+            finally:
+                _mod._anthropic_client = old_client
 
     def test_claude_with_mocked_api(self):
         """Mock the Anthropic client to avoid real API calls."""
