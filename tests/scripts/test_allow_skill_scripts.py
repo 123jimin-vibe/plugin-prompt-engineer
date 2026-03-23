@@ -526,74 +526,82 @@ class TestMain(unittest.TestCase):
         self.assertEqual(hook_output.get("permissionDecision"), "allow")
 
     # --- missing env vars ---
-    def test_missing_plugin_root_exits_1(self):
+    def test_missing_plugin_root_no_opinion(self):
         cmd = self._make_cmd()
         hook = _make_hook_json(cmd)
         env = {"CLAUDE_PLUGIN_DATA": self.plugin_data}
         # Remove CLAUDE_PLUGIN_ROOT if it happens to exist in the real env
         with patch.dict(os.environ, env, clear=False):
             os.environ.pop("CLAUDE_PLUGIN_ROOT", None)
-            exit_code, _ = self._run_main(hook, {})
-        self.assertEqual(exit_code, 1)
+            exit_code, stdout = self._run_main(hook, {})
+        self.assertIsNone(exit_code)
+        self.assertEqual(stdout, "")
 
-    def test_missing_plugin_data_exits_1(self):
+    def test_missing_plugin_data_no_opinion(self):
         cmd = self._make_cmd()
         hook = _make_hook_json(cmd)
         env = {"CLAUDE_PLUGIN_ROOT": self.plugin_root}
         with patch.dict(os.environ, env, clear=False):
             os.environ.pop("CLAUDE_PLUGIN_DATA", None)
-            exit_code, _ = self._run_main(hook, {})
-        self.assertEqual(exit_code, 1)
+            exit_code, stdout = self._run_main(hook, {})
+        self.assertIsNone(exit_code)
+        self.assertEqual(stdout, "")
 
     # --- malformed input ---
-    def test_malformed_json_exits_1(self):
-        exit_code, _ = self._run_main("not json!", self._env())
-        self.assertEqual(exit_code, 1)
+    def test_malformed_json_no_opinion(self):
+        exit_code, stdout = self._run_main("not json!", self._env())
+        self.assertIsNone(exit_code)
+        self.assertEqual(stdout, "")
 
-    def test_empty_stdin_exits_1(self):
-        exit_code, _ = self._run_main("", self._env())
-        self.assertEqual(exit_code, 1)
+    def test_empty_stdin_no_opinion(self):
+        exit_code, stdout = self._run_main("", self._env())
+        self.assertIsNone(exit_code)
+        self.assertEqual(stdout, "")
 
-    def test_json_without_tool_input_exits_1(self):
+    def test_json_without_tool_input_no_opinion(self):
         hook = json.dumps({"something": "else"})
-        exit_code, _ = self._run_main(hook, self._env())
-        self.assertEqual(exit_code, 1)
+        exit_code, stdout = self._run_main(hook, self._env())
+        self.assertIsNone(exit_code)
+        self.assertEqual(stdout, "")
 
     # --- invalid exe ---
-    def test_non_venv_python_exits_1(self):
+    def test_non_venv_python_no_opinion(self):
         cmd = f"/usr/bin/python {_posix_path(self.script)}"
         hook = _make_hook_json(cmd)
         exit_code, stdout = self._run_main(hook, self._env())
-        self.assertEqual(exit_code, 1)
+        self.assertIsNone(exit_code)
         self.assertNotIn("allow", stdout)
 
     # --- invalid script ---
-    def test_non_skill_script_exits_1(self):
+    def test_non_skill_script_no_opinion(self):
         rogue = pathlib.Path(self.tmpdir) / "rogue.py"
         rogue.touch()
         cmd = f"{_posix_path(self.python_exe)} {_posix_path(rogue)}"
         hook = _make_hook_json(cmd)
         exit_code, stdout = self._run_main(hook, self._env())
-        self.assertEqual(exit_code, 1)
+        self.assertIsNone(exit_code)
         self.assertNotIn("allow", stdout)
 
     # --- command with wrong number of tokens ---
-    def test_single_token_command_exits_1(self):
+    def test_single_token_command_no_opinion(self):
         """Just an executable, no script argument."""
         hook = _make_hook_json(_posix_path(self.python_exe))
-        exit_code, _ = self._run_main(hook, self._env())
-        self.assertEqual(exit_code, 1)
+        exit_code, stdout = self._run_main(hook, self._env())
+        self.assertIsNone(exit_code)
+        self.assertEqual(stdout, "")
 
-    def test_non_python_exe_exits_1(self):
+    def test_non_python_exe_no_opinion(self):
         """Executable is bash, not python."""
         hook = _make_hook_json(f"bash {_posix_path(self.script)}")
-        exit_code, _ = self._run_main(hook, self._env())
-        self.assertEqual(exit_code, 1)
+        exit_code, stdout = self._run_main(hook, self._env())
+        self.assertIsNone(exit_code)
+        self.assertEqual(stdout, "")
 
-    def test_empty_command_exits_1(self):
+    def test_empty_command_no_opinion(self):
         hook = _make_hook_json("")
-        exit_code, _ = self._run_main(hook, self._env())
-        self.assertEqual(exit_code, 1)
+        exit_code, stdout = self._run_main(hook, self._env())
+        self.assertIsNone(exit_code)
+        self.assertEqual(stdout, "")
 
     # --- allow with extra arguments ---
     def test_allow_with_extra_args(self):
@@ -606,7 +614,7 @@ class TestMain(unittest.TestCase):
             self.assertEqual(exit_code, 0)
 
     # --- path traversal via command ---
-    def test_script_path_traversal_in_command_exits_1(self):
+    def test_script_path_traversal_in_command_no_opinion(self):
         """A command with ../ in the script path that escapes the skills tree."""
         # Create a .py file outside the skills tree
         outside = pathlib.Path(self.plugin_root) / "evil.py"
@@ -624,7 +632,7 @@ class TestMain(unittest.TestCase):
         cmd = f"{_posix_path(self.python_exe)} {_posix_path(traversal)}"
         hook = _make_hook_json(cmd)
         exit_code, stdout = self._run_main(hook, self._env())
-        self.assertEqual(exit_code, 1)
+        self.assertIsNone(exit_code)
         self.assertNotIn("allow", stdout)
 
 

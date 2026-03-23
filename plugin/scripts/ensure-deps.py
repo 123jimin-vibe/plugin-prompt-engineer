@@ -47,11 +47,12 @@ def install(plugin_root: Path, plugin_data: Path):
     if is_up_to_date(version_file, version):
         return
 
-    venv.create(venv_dir, with_pip=True, clear=True)
+    if not venv_dir.exists():
+        venv.create(venv_dir, with_pip=True)
 
     try:
         subprocess.run(
-            [str(get_pip(venv_dir)), "install", str(plugin_root)],
+            [str(get_pip(venv_dir)), "install", "--upgrade", str(plugin_root)],
             check=True,
         )
         version_file.write_text(version)

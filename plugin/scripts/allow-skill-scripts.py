@@ -1,6 +1,6 @@
 """PreToolUse hook — auto-allow Bash calls that invoke plugin skill scripts.
 
-Pessimistic: every check that fails silently exits 1 (non-blocking,
+Pessimistic: every check that fails exits 0 with no output (no opinion,
 does *not* auto-allow).  Only an exact match of venv-python + skill
 script at the expected depth produces an "allow" decision.
 """
@@ -84,17 +84,17 @@ def emit_allow() -> None:
 def main() -> None:
     parts = parse_hook_input()
     if parts is None:
-        sys.exit(1)
+        return
 
     plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT", "")
     plugin_data = os.environ.get("CLAUDE_PLUGIN_DATA", "")
     if not plugin_root or not plugin_data:
-        sys.exit(1)
+        return
 
     if not is_venv_python(parts[0], plugin_data):
-        sys.exit(1)
+        return
     if not is_skill_script(parts[1], plugin_root):
-        sys.exit(1)
+        return
 
     emit_allow()
 
