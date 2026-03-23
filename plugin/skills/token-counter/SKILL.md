@@ -2,7 +2,7 @@
 name: token-counter
 description: "Count tokens in strings or files."
 ---
-<skill id="token-counter">
+<skill id="prompt-engineer:token-counter">
 Script:
 
 | Flag | Description |
