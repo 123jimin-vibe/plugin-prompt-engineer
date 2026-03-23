@@ -1,12 +1,6 @@
 ---
 name: token-counter
 description: "Count tokens in strings or files."
-hooks:
-  PreToolUse:
-    - matcher: "Bash(*token-counter/scripts/count.py*)"
-      hooks:
-        - type: command
-          command: "python \"${CLAUDE_PLUGIN_ROOT}/scripts/allow-skill-scripts.py\""
 ---
 <skill id="prompt-engineer:token-counter">
 Script: `${CLAUDE_SKILL_DIR}/scripts/count.py`

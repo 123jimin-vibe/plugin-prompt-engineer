@@ -1,12 +1,6 @@
 ---
 name: invoke-llm
 description: "Run prompts against LLMs. Trigger on: test/send/invoke a prompt, get a completion, compare models, matrix sweep, batch-test prompts."
-hooks:
-  PreToolUse:
-    - matcher: "Bash(*invoke-llm/scripts/invoke.py*)"
-      hooks:
-        - type: command
-          command: "python \"${CLAUDE_PLUGIN_ROOT}/scripts/allow-skill-scripts.py\""
 ---
 <skill id="prompt-engineer:invoke-llm">
 Script: `${CLAUDE_SKILL_DIR}/scripts/invoke.py`
