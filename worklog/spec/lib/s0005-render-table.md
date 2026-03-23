@@ -5,7 +5,7 @@ tags = ["lib", "formatting"]
 paths = ["plugin/lib/**"]
 +++
 
-Shared plain-text formatting utilities for skill script output, living in `lib/`. Not yet implemented.
+Shared plain-text formatting utilities for skill script output, living in `lib/`.
 
 ## `render_table`
 
