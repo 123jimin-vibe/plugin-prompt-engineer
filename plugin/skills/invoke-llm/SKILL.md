@@ -1,8 +1,19 @@
-# invoke-llm
+---
+name: invoke-llm
+description: "Run prompts against LLMs. Trigger on: test/send/invoke a prompt, get a completion, compare models, matrix sweep, batch-test prompts."
+hooks:
+  PreToolUse:
+    - matcher: "Bash(*invoke-llm/scripts/invoke.py*)"
+      hooks:
+        - type: command
+          command: "python \"${CLAUDE_PLUGIN_ROOT}/scripts/allow-skill-scripts.py\""
+---
+<skill id="prompt-engineer:invoke-llm">
+Script: `${CLAUDE_SKILL_DIR}/scripts/invoke.py`
+
+Run with the plugin venv at `${CLAUDE_PLUGIN_DATA}/venv`.
 
 Raw LLM API calls (text in, text out). No tool use, no agent context, no skills.
-
-Script: `invoke.py`
 
 ## Models
 
@@ -60,3 +71,4 @@ TOML config with matrix sweep (cartesian product of array values). See `referenc
 - Use `--json` for structured output that's easy to parse programmatically.
 - Use `-q --json` when you only need metadata (tokens, latency) without the response text.
 - For prompt iteration, use config mode with file-based prompts and variable substitution.
+</skill>
