@@ -28,9 +28,7 @@ Requires `tiktoken` (declared in `plugin/pyproject.toml` — see [s0001](s0001-p
 
 ## Script
 
-`plugin/skills/token-counter/scripts/count.py` — stub that verifies tiktoken is importable.
-
-Invoked via the plugin venv at `${CLAUDE_PLUGIN_DATA}/venv`.
+Currently a stub that verifies tiktoken is importable. Invoked via the plugin venv at `${CLAUDE_PLUGIN_DATA}/venv`.
 
 ## Anticipated Changes
 
