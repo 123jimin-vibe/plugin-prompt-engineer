@@ -7,23 +7,32 @@ paths = ["plugin/pyproject.toml", "plugin/scripts/**", "plugin/hooks/**", "plugi
 
 Manages the plugin's Python environment: dependencies, shared code, and venv lifecycle.
 
+`ensure-deps.py` is plugin-agnostic — reusable by any Claude Code plugin that ships a `pyproject.toml` and a `.claude-plugin/plugin.json` with a `version` field.
+
 ## Package
 
-The plugin root (`plugin/`) is a pip-installable Python package defined by `plugin/pyproject.toml`. It declares third-party dependencies and exposes `plugin/lib/` as an importable package.
+The plugin root is a pip-installable Python package defined by `pyproject.toml`. It declares third-party dependencies and exposes `lib/` as an importable package.
 
 ## Shared Code
 
-`plugin/lib/` is a Python package importable as `lib` by all skill scripts. Installed in editable mode so changes take effect without reinstalling.
+`lib/` is a Python package importable by all skill scripts. Installed as a regular (non-editable) package into the venv — the plugin cache is a copy, so editable installs don't work.
 
 ## Venv Lifecycle
 
-A `SessionStart` hook (`plugin/hooks/hooks.json`) runs `plugin/scripts/ensure-deps.py`, which:
+A `SessionStart` hook runs `scripts/ensure-deps.py`, which:
 
-1. Compares the bundled `pyproject.toml` against a cached copy in `${CLAUDE_PLUGIN_DATA}`.
-2. On mismatch (or first run), creates a venv at `${CLAUDE_PLUGIN_DATA}/venv` and runs `pip install -e`.
-3. Copies the manifest on success; removes the cached copy on failure so the next session retries.
+1. Reads the plugin version from `.claude-plugin/plugin.json`.
+2. Compares against `${CLAUDE_PLUGIN_DATA}/installed-version`.
+3. On version change (or first run), creates a venv at `${CLAUDE_PLUGIN_DATA}/venv` and runs `pip install`.
+4. Writes the version on success; removes the version file on failure so the next session retries.
 
 Cross-platform: uses `venv/Scripts/pip` on Windows, `venv/bin/pip` elsewhere.
+
+### Assumptions
+
+- `CLAUDE_PLUGIN_ROOT` contains a `pyproject.toml`.
+- `CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json` contains a `"version"` field.
+- `CLAUDE_PLUGIN_DATA` is available for persistent storage.
 
 ## Usage
 

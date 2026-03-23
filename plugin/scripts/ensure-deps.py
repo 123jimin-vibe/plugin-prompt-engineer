@@ -1,52 +1,67 @@
-"""Ensure plugin Python dependencies are installed.
+"""Ensure a Claude Code plugin's Python dependencies are installed.
 
-Compares the bundled pyproject.toml against a cached copy in the
-persistent data directory. On mismatch (or first run), creates a venv
-and installs the plugin in editable mode. Removes the cached copy on
-failure so the next session retries.
+Reads the plugin version from .claude-plugin/plugin.json via
+CLAUDE_PLUGIN_ROOT. On version change (or first run), creates a venv
+in CLAUDE_PLUGIN_DATA and pip-installs the plugin root as a package.
+
+Requires:
+  - CLAUDE_PLUGIN_ROOT pointing to a directory with pyproject.toml
+  - CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json containing "version"
+  - CLAUDE_PLUGIN_DATA for persistent storage
+
+Reusable across any Claude Code plugin that ships a pyproject.toml.
 """
 
-import filecmp
+import json
 import os
-import shutil
 import subprocess
 import sys
 import venv
+from pathlib import Path
 
 
-def main():
-    plugin_root = os.environ["CLAUDE_PLUGIN_ROOT"]
-    plugin_data = os.environ["CLAUDE_PLUGIN_DATA"]
+def get_plugin_version(plugin_root: Path) -> str:
+    manifest = plugin_root / ".claude-plugin" / "plugin.json"
+    return json.loads(manifest.read_text())["version"]
 
-    bundled = os.path.join(plugin_root, "pyproject.toml")
-    cached = os.path.join(plugin_data, "pyproject.toml")
-    venv_dir = os.path.join(plugin_data, "venv")
 
-    # Already up to date
-    if os.path.exists(cached) and filecmp.cmp(bundled, cached, shallow=False):
+def get_pip(venv_dir: Path) -> Path:
+    match sys.platform:
+        case "win32":
+            return venv_dir / "Scripts" / "pip"
+        case _:
+            return venv_dir / "bin" / "pip"
+
+
+def is_up_to_date(version_file: Path, version: str) -> bool:
+    if not version_file.exists():
+        return False
+    return version_file.read_text().strip() == version
+
+
+def install(plugin_root: Path, plugin_data: Path):
+    version = get_plugin_version(plugin_root)
+    version_file = plugin_data / "installed-version"
+    venv_dir = plugin_data / "venv"
+
+    if is_up_to_date(version_file, version):
         return
 
-    # Create or refresh venv
     venv.create(venv_dir, with_pip=True, clear=True)
-
-    # pip path is platform-dependent
-    if sys.platform == "win32":
-        pip = os.path.join(venv_dir, "Scripts", "pip")
-    else:
-        pip = os.path.join(venv_dir, "bin", "pip")
 
     try:
         subprocess.run(
-            [pip, "install", "-e", plugin_root],
+            [str(get_pip(venv_dir)), "install", str(plugin_root)],
             check=True,
         )
-        shutil.copy2(bundled, cached)
+        version_file.write_text(version)
     except Exception:
-        # Remove cached copy so next session retries
-        if os.path.exists(cached):
-            os.remove(cached)
+        version_file.unlink(missing_ok=True)
         raise
 
 
 if __name__ == "__main__":
-    main()
+    install(
+        Path(os.environ["CLAUDE_PLUGIN_ROOT"]),
+        Path(os.environ["CLAUDE_PLUGIN_DATA"]),
+    )
