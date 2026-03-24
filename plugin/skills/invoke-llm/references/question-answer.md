@@ -19,13 +19,31 @@ file = "SKILL.md"
 
 [[prompts]]
 role = "user"
-prompt = ["What is X?", "Explain Y.", "How do you handle Z?"]
+prompt = [
+  # Tests whether the model handles multi-step requests in order.
+  # Expected: does X first, then Y, does not merge them.
+  "A user asks you to do X, then follows up with Y. What do you do?",
+  # Tests step-by-step reasoning under scenario Z.
+  # Expected: addresses each step explicitly, does not skip step 2.
+  "Given scenario Z, walk through how you would handle each step.",
+]
 
 [output]
 file = "eval-results.jsonl"
 ```
 
-2 models x 3 questions = 6 runs. Use `--dry-run` to verify before running. Prefer inline `prompt` over `file` to keep configs self-contained.
+2 models x 2 scenarios = 4 runs. Prefer fewer, scenario-based prompts over many isolated questions — each run covers more ground and better reflects real usage. Use `--dry-run` to verify before running.
+
+## Writing questions
+
+Prefer questions with objective, scorable answers. Open-ended questions are fine when the user will review outputs directly. Comment each question in the config with its intention and expected answer.
+
+Common pitfalls (all stem from projecting your own understanding onto the questions):
+- **Leading questions**: embedding the expected answer biases the LLM toward it, hiding real behavior.
+- **Testing your interpretation**: you resolve ambiguities in your head, then write questions that validate your reading — actual ambiguities go untested.
+- **Happy-path bias**: writing questions that naturally succeed, skipping adversarial or edge-case inputs.
+
+Ground questions in concrete, realistic user inputs rather than crafting them to verify your assumptions. Prefer harder questions that distinguish good prompts from bad ones — easy questions that any prompt passes don't provide signal.
 
 ## Tips
 
