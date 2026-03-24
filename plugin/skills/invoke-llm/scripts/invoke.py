@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import os
 import sys
 import tomllib
 from itertools import product
@@ -38,7 +37,8 @@ def _next_order() -> int:
 class _AppendOrdered(argparse.Action):
     """Custom action that records insertion order across all prompt flags."""
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, _parser, namespace, values, option_string=None):
+        assert isinstance(values, str)
         entries = getattr(namespace, "_ordered_prompts", [])
         role = "system" if option_string in ("-s", "-S") else "user"
         is_file = option_string in ("-S", "-U")
@@ -236,7 +236,6 @@ def _build_run_spec(config: dict, overrides: dict) -> dict:
 
     for i, prompt in enumerate(config.get("prompts", [])):
         role = prompt["role"]
-        entry_sep = prompt.get("separator", separator)
         do_substitute = prompt.get("substitute", False)
 
         # Resolve text

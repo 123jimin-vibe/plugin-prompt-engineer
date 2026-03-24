@@ -15,4 +15,6 @@ Run with the plugin venv at `${CLAUDE_PLUGIN_DATA}/venv`.
 | `-s` | Per-section breakdown (YAML frontmatter + `##` headings) |
 
 Multiple inputs or models print a comparison table. Prefer combining repeatable flags into a single invocation (e.g. `-m cl100k_base -m o200k_base`) rather than running the script multiple times.
+
+Note: `cl100k_base` is outdated; prefer `o200k_base` when using tiktoken encodings.
 </skill>
