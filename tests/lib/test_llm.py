@@ -87,7 +87,7 @@ class TestResolveProviderOpenAI(unittest.TestCase):
         self.assertEqual(resolve_provider("gpt-4o"), "openai")
 
     def test_gpt_5_mini(self):
-        self.assertEqual(resolve_provider("gpt-5-mini"), "openai")
+        self.assertEqual(resolve_provider("gpt-5.4-mini"), "openai")
 
     def test_arbitrary_model(self):
         self.assertEqual(resolve_provider("llama-3-70b"), "openai")

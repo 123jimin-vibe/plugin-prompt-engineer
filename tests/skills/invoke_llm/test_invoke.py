@@ -402,7 +402,7 @@ file = ["a.md", "b.md"]
         self._write_file("relaxed.md", "relaxed")
         path = self._write_toml("run.toml", """\
 [generation]
-model = ["claude-sonnet-4-6", "gpt-5-mini"]
+model = ["claude-sonnet-4-6", "gpt-5.4-mini"]
 temperature = [0.0, 0.5, 1.0]
 
 [[prompts]]

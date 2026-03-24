@@ -16,7 +16,7 @@ Any model ID is accepted. Routing is prefix-based — not restricted to the exam
 | Provider | Models | Env var |
 |----------|--------|---------|
 | Anthropic | `claude-opus-4-6`, `claude-sonnet-4-6`, `claude-haiku-4-5` | `ANTHROPIC_API_KEY` |
-| OpenAI | `gpt-5.4`, `gpt-5-mini` | `OPENAI_API_KEY` |
+| OpenAI | `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano` | `OPENAI_API_KEY` |
 | Google | `gemini-3.1-pro-preview`, `gemini-3-flash-preview` | `GEMINI_API_KEY` |
 
 Routing: `claude*` -> Anthropic, `gemini*` -> Google (OpenAI-compatible endpoint), everything else -> OpenAI.
@@ -26,7 +26,7 @@ Routing: `claude*` -> Anthropic, `gemini*` -> Google (OpenAI-compatible endpoint
 ```
 invoke.py "What is 2+2?"
 invoke.py -s "You are a poet" -u "Write about rain"
-invoke.py -S system.md -U prompt.md -m gpt-5-mini --json
+invoke.py -S system.md -U prompt.md -m gpt-5.4-mini --json
 ```
 
 | Flag | Description |

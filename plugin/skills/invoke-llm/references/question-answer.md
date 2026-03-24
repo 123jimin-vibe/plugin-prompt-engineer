@@ -10,7 +10,7 @@ Predicting LLM behavior is a false-belief task — you cannot reliably model ano
 # Used with prompt-engineer:invoke-llm skill.
 
 [generation]
-model = ["claude-sonnet-4-6", "gpt-5-mini"]
+model = ["claude-sonnet-4-6", "gpt-5.4-mini"]
 temperature = 0.0
 
 [[prompts]]

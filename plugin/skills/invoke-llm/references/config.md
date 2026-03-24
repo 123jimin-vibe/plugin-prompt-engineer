@@ -4,7 +4,7 @@
 # Used with prompt-engineer:invoke-llm skill.
 
 [generation]
-model = ["claude-sonnet-4-6", "gpt-5-mini"]   # scalar or array (sweep)
+model = ["claude-sonnet-4-6", "gpt-5.4-mini"]   # scalar or array (sweep)
 temperature = [0.0, 0.5, 1.0]                  # scalar or array (sweep)
 max_tokens = 4096                               # scalar only
 separator = "\n\n"                              # default join between same-role entries
