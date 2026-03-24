@@ -20,7 +20,7 @@ Plugin manifest lives at `.claude-plugin/plugin.json` (name, description, versio
 
 ## Evaluation
 
-- **exams** — see [s0007](skill/s0007-exams.md).
+- **exams** — see [s0007](infra/s0007-exams.md).
 
 ## Conventions
 

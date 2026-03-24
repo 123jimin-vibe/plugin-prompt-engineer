@@ -5,7 +5,7 @@ tags = ["infra", "testing", "prompts"]
 paths = ["exams/**"]
 +++
 
-Question-answer configs that test prompts shipped by this plugin. Uses the invoke-llm skill's config mode ([s0006](s0006-invoke-llm.md)) to run prompts against LLMs and verify behavior.
+Question-answer configs that test prompts shipped by this plugin. Uses the invoke-llm skill's config mode ([s0006](../skill/s0006-invoke-llm.md)) to run prompts against LLMs and verify behavior.
 
 ## Purpose
 
