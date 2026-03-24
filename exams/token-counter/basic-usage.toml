@@ -1,0 +1,26 @@
+# Used with prompt-engineer:invoke-llm skill.
+
+[generation]
+model = "claude-sonnet-4-6"
+temperature = 0.0
+
+[[prompts]]
+role = "system"
+file = "../../plugin/skills/token-counter/SKILL.md"
+
+[[prompts]]
+role = "user"
+prompt = [
+  # Tests: single invocation with repeated flags, o200k_base preference.
+  # Expected: one command with -f FILE -f FILE -m MODEL -m MODEL. Warns about
+  # cl100k_base being outdated or suggests o200k_base. Does NOT split into
+  # multiple script invocations.
+  "I need token counts for README.md and docs/guide.md with cl100k_base and o200k_base.",
+  # Tests: uses the script for counting, does not fabricate a number.
+  # Expected: produces a count.py invocation with positional string and -m flags.
+  # Does NOT answer with a token count from its own knowledge.
+  "How many tokens is 'The quick brown fox jumps over the lazy dog' in claude-opus-4-6 and gpt-4o?",
+]
+
+[output]
+file = "basic-usage-results.jsonl"
