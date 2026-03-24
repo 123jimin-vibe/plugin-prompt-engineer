@@ -60,10 +60,10 @@ TOML config with matrix sweep (cartesian product of array values). See `referenc
 
 ## Assistant guidance
 
-- Predicting how an LLM will respond to a prompt is a false-belief task — you cannot reliably model another model's behavior, even your own under a different system prompt. Invoke and observe instead.
+- Predicting LLM responses is a false-belief task — you cannot reliably model another model's behavior, even your own under a different system prompt. Invoke and observe.
 - Use single-shot mode for quick one-off prompts.
-- Use config mode with `--dry-run` first to verify sweep dimensions before running.
-- Use `--json` for structured output that's easy to parse programmatically.
+- Use config mode with `--dry-run` to verify sweep dimensions before running.
+- Use `--json` for structured output.
 - Use `-q --json` when you only need metadata (tokens, latency) without the response text.
 - For prompt iteration, use config mode with file-based prompts and variable substitution.
 - For repeated prompt evaluation (e.g. testing a skill's SKILL.md across models/questions), see `references/question-answer.md`.

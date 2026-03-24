@@ -2,7 +2,7 @@
 
 Prerequisite: read `config.md` for the TOML config schema.
 
-Predicting LLM behavior is a false-belief task — you cannot reliably model another model's output, even your own under a different system prompt. This pattern evaluates a prompt (especially a skill's SKILL.md) by running it and reviewing actual outputs. Useful when single-shot mode becomes unwieldy or repeated tests are needed.
+Predicting LLM behavior is a false-belief task — you cannot reliably model another model's output, even your own under a different system prompt. This pattern evaluates a prompt (especially a skill's SKILL.md) by running it. Useful when single-shot mode becomes unwieldy or repeated tests are needed.
 
 ## Config
 
@@ -32,18 +32,18 @@ prompt = [
 file = "eval-results.jsonl"
 ```
 
-2 models x 2 scenarios = 4 runs. Prefer fewer, scenario-based prompts over many isolated questions — each run covers more ground and better reflects real usage. Use `--dry-run` to verify before running.
+2 models x 2 scenarios = 4 runs. Prefer fewer, scenario-based prompts over many isolated questions. Use `--dry-run` to verify before running.
 
 ## Writing questions
 
 Prefer questions with objective, scorable answers. Open-ended questions are fine when the user will review outputs directly. Comment each question in the config with its intention and expected answer.
 
 Common pitfalls (all stem from projecting your own understanding onto the questions):
-- **Leading questions**: embedding the expected answer biases the LLM toward it, hiding real behavior.
-- **Testing your interpretation**: you resolve ambiguities in your head, then write questions that validate your reading — actual ambiguities go untested.
-- **Happy-path bias**: writing questions that naturally succeed, skipping adversarial or edge-case inputs.
+- **Leading questions**: embedding the expected answer biases the LLM toward it.
+- **Testing your interpretation**: resolving ambiguities in your head, then writing questions that validate your reading.
+- **Happy-path bias**: only testing inputs that naturally succeed.
 
-Ground questions in concrete, realistic user inputs rather than crafting them to verify your assumptions. Prefer harder questions that distinguish good prompts from bad ones — easy questions that any prompt passes don't provide signal.
+Ground questions in realistic user inputs. Prefer harder questions that distinguish good prompts from bad.
 
 ## Tips
 
