@@ -1,7 +1,7 @@
 +++
 id = "s0004"
 title = "Testing"
-tags = ["testing", "quality"]
+tags = ["infra", "testing"]
 paths = ["tests/**"]
 +++
 

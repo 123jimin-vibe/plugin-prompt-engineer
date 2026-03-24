@@ -2,7 +2,7 @@
 id = "s0005"
 title = "Output Formatting"
 tags = ["lib", "formatting"]
-paths = ["plugin/lib/**"]
+paths = ["plugin/lib/format.py"]
 +++
 
 Shared plain-text formatting utilities for skill script output, living in `lib/`.

@@ -1,7 +1,7 @@
 +++
 id = "s0007"
 title = "Exams"
-tags = ["testing", "prompts", "invoke-llm"]
+tags = ["infra", "testing", "prompts"]
 paths = ["exams/**"]
 +++
 

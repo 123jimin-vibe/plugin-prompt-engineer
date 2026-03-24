@@ -19,7 +19,7 @@ Counts tokens in strings or files across one or more models/encodings.
 ## Behavior
 
 - Single input + single model → scalar count (bare number).
-- Multiple inputs or models → comparison table via `render_table` (see [s0005](lib/s0005-render-table.md)). Single-valued dimensions are collapsed (e.g. one model → no Model column).
+- Multiple inputs or models → comparison table via `render_table` (see [s0005](../lib/s0005-render-table.md)). Single-valued dimensions are collapsed (e.g. one model → no Model column).
 - `-s` splits the input at YAML frontmatter and `##` headings, reporting counts per section. **TODO.**
 
 ## Tokenizer Dispatch

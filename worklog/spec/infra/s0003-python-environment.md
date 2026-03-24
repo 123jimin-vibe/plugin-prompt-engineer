@@ -1,8 +1,8 @@
 +++
 id = "s0003"
 title = "Python Environment"
-tags = ["dependencies", "setup"]
-paths = ["plugin/pyproject.toml", "plugin/scripts/**", "plugin/hooks/**", "plugin/lib/**"]
+tags = ["infra", "python", "dependencies"]
+paths = ["plugin/pyproject.toml", "plugin/scripts/ensure-deps.py"]
 +++
 
 Manages the plugin's Python environment: dependencies, shared code, and venv lifecycle.
