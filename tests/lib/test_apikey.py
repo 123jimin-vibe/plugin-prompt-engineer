@@ -47,6 +47,16 @@ class TestRequireApiKeyPresent(unittest.TestCase):
 
 
 @unittest.skipUnless(_module_available, _missing_reason)
+class TestRequireApiKeyGemini(unittest.TestCase):
+    """Gemini key retrieval."""
+
+    def test_gemini_key_returned(self):
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "gem-test-456"}):
+            result = require_api_key("gemini")
+            self.assertEqual(result, "gem-test-456")
+
+
+@unittest.skipUnless(_module_available, _missing_reason)
 class TestRequireApiKeyMissing(unittest.TestCase):
     """When the key is unset, exit with a clear one-line message."""
 
@@ -57,6 +67,20 @@ class TestRequireApiKeyMissing(unittest.TestCase):
                 require_api_key("anthropic")
             msg = str(ctx.exception)
             self.assertIn("ANTHROPIC_API_KEY", msg)
+
+    def test_openai_missing_exits(self):
+        env = {k: v for k, v in os.environ.items() if k != "OPENAI_API_KEY"}
+        with patch.dict(os.environ, env, clear=True):
+            with self.assertRaises(SystemExit) as ctx:
+                require_api_key("openai")
+            self.assertIn("OPENAI_API_KEY", str(ctx.exception))
+
+    def test_gemini_missing_exits(self):
+        env = {k: v for k, v in os.environ.items() if k != "GEMINI_API_KEY"}
+        with patch.dict(os.environ, env, clear=True):
+            with self.assertRaises(SystemExit) as ctx:
+                require_api_key("gemini")
+            self.assertIn("GEMINI_API_KEY", str(ctx.exception))
 
     def test_empty_string_treated_as_missing(self):
         with patch.dict(os.environ, {"ANTHROPIC_API_KEY": ""}):

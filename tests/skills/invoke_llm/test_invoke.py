@@ -223,6 +223,25 @@ class TestBuildPromptOrder(unittest.TestCase):
         # user may be empty or absent
         self.assertFalse(prompt.get("user", ""))
 
+    def test_interleaved_file_and_inline_order(self):
+        """File and inline inputs interleaved preserve command-line order."""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".txt", delete=False
+        ) as f:
+            f.write("from file")
+            fpath = f.name
+        try:
+            ns = parse_args(["-u", "first", "-U", fpath, "-u", "third"])
+            prompt = build_prompt(ns)
+            user = prompt["user"]
+            idx1 = user.index("first")
+            idx2 = user.index("from file")
+            idx3 = user.index("third")
+            self.assertLess(idx1, idx2)
+            self.assertLess(idx2, idx3)
+        finally:
+            os.unlink(fpath)
+
 
 # ===================================================================
 # load_config
@@ -417,6 +436,58 @@ prompt = "inline text"
         matrix = expand_matrix(config)
         self.assertEqual(len(matrix), 12)
 
+    def test_prompt_array_sweep(self):
+        """Inline prompt array = sweep dimension. 2 prompts → 2 runs."""
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "claude-sonnet-4-6"
+
+[[prompts]]
+role = "user"
+prompt = ["question one", "question two"]
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 2)
+        # Each run should have a different user prompt.
+        user_prompts = [run["messages"]["user"] for run in matrix]
+        self.assertIn("question one", user_prompts)
+        self.assertIn("question two", user_prompts)
+
+    def test_prompt_array_with_model_sweep(self):
+        """2 models × 3 inline prompts = 6 runs."""
+        path = self._write_toml("run.toml", """\
+[generation]
+model = ["gpt-4o", "claude-sonnet-4-6"]
+
+[[prompts]]
+role = "user"
+prompt = ["q1", "q2", "q3"]
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 6)
+
+    def test_prompt_array_with_file_array(self):
+        """2 system files × 2 inline user prompts = 4 runs."""
+        self._write_file("a.md", "system a")
+        self._write_file("b.md", "system b")
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+
+[[prompts]]
+role = "system"
+file = ["a.md", "b.md"]
+
+[[prompts]]
+role = "user"
+prompt = ["question one", "question two"]
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 4)
+
 
 # ===================================================================
 # substitute_vars
@@ -451,6 +522,54 @@ class TestSubstituteVars(unittest.TestCase):
     def test_no_placeholders(self):
         result = substitute_vars("no placeholders here", {"key": "val"})
         self.assertEqual(result, "no placeholders here")
+
+
+@unittest.skipUnless(_module_available, _missing_reason)
+class TestSubstituteVarsEndToEnd(unittest.TestCase):
+    """Variable substitution through the full config → expand_matrix pipeline."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _write_file(self, name, content):
+        path = os.path.join(self.tmpdir, name)
+        with open(path, "w") as f:
+            f.write(content)
+        return path
+
+    def _write_toml(self, name, content):
+        path = os.path.join(self.tmpdir, name)
+        with open(path, "w") as f:
+            f.write(content)
+        return path
+
+    def test_vars_content_injected_into_prompt(self):
+        """[vars] file content replaces {{key}} in prompts with substitute=true."""
+        self._write_file("context.md", "important context here")
+        self._write_file("template.md", "Given: {{input}}\nAnswer the question.")
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+
+[vars]
+input = "context.md"
+
+[[prompts]]
+role = "user"
+file = "template.md"
+substitute = true
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 1)
+        user_msg = matrix[0]["messages"]["user"]
+        # The placeholder should be replaced with file content.
+        self.assertIn("important context here", user_msg)
+        self.assertNotIn("{{input}}", user_msg)
 
 
 # ===================================================================
@@ -629,6 +748,104 @@ file = "x.md"
         # Should mention the model dimension values.
         self.assertIn("gpt-4o", output)
         self.assertIn("claude-sonnet-4-6", output)
+
+
+# ===================================================================
+# Config-mode separator handling
+# ===================================================================
+
+@unittest.skipUnless(_module_available, _missing_reason)
+class TestConfigSeparator(unittest.TestCase):
+    """Custom separators in [generation] and per-prompt overrides."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _write_file(self, name, content):
+        path = os.path.join(self.tmpdir, name)
+        with open(path, "w") as f:
+            f.write(content)
+        return path
+
+    def _write_toml(self, name, content):
+        path = os.path.join(self.tmpdir, name)
+        with open(path, "w") as f:
+            f.write(content)
+        return path
+
+    def test_generation_separator_used(self):
+        """[generation].separator overrides the default \\n\\n join."""
+        self._write_file("a.md", "part a")
+        self._write_file("b.md", "part b")
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+separator = "\\n---\\n"
+
+[[prompts]]
+role = "user"
+file = "a.md"
+
+[[prompts]]
+role = "user"
+file = "b.md"
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        user_msg = matrix[0]["messages"]["user"]
+        self.assertIn("---", user_msg)
+        self.assertIn("part a", user_msg)
+        self.assertIn("part b", user_msg)
+
+
+# ===================================================================
+# Config-mode [output].file
+# ===================================================================
+
+@unittest.skipUnless(_module_available, _missing_reason)
+class TestConfigOutputFile(unittest.TestCase):
+    """[output].file resolves relative to the TOML file's parent."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _write_toml(self, name, content):
+        path = os.path.join(self.tmpdir, name)
+        with open(path, "w") as f:
+            f.write(content)
+        return path
+
+    def test_output_file_resolved_to_absolute(self):
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+
+[output]
+file = "results.jsonl"
+
+[[prompts]]
+role = "user"
+prompt = "test"
+""")
+        config = load_config(path)
+        output_file = config["output"]["file"]
+        self.assertTrue(
+            os.path.isabs(output_file),
+            "output.file should be resolved to absolute path"
+        )
+        # Should be under the TOML's parent directory.
+        self.assertTrue(
+            output_file.startswith(self.tmpdir),
+            "output.file should resolve relative to TOML parent"
+        )
 
 
 if __name__ == "__main__":

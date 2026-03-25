@@ -232,5 +232,139 @@ class TestInvokeOpenAIMocked(unittest.TestCase):
         self.assertIn("finish_reason", result)
 
 
+# ===================================================================
+# create_client — caching
+# ===================================================================
+
+@unittest.skipUnless(_module_available, _missing_reason)
+class TestCreateClientCaching(unittest.TestCase):
+    """Calling create_client twice returns the same cached instance."""
+
+    def test_same_client_returned(self):
+        mock_cls = MagicMock()
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test"}):
+            with patch.dict(sys.modules, {"openai": MagicMock(OpenAI=mock_cls)}):
+                if hasattr(_mod, "_clients"):
+                    _mod._clients.clear()
+                first = create_client("openai")
+                second = create_client("openai")
+                self.assertIs(first, second)
+                # Constructor called only once.
+                mock_cls.assert_called_once()
+
+
+# ===================================================================
+# invoke — user-only messages (no system prompt)
+# ===================================================================
+
+@unittest.skipUnless(_module_available, _missing_reason)
+class TestInvokeAnthropicUserOnly(unittest.TestCase):
+    """invoke() with only a user message, no system prompt."""
+
+    def test_user_only_anthropic(self):
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(text="Response")]
+        mock_response.model = "claude-sonnet-4-6"
+        mock_response.usage.input_tokens = 5
+        mock_response.usage.output_tokens = 2
+        mock_response.stop_reason = "end_turn"
+
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = mock_response
+
+        if hasattr(_mod, "_clients"):
+            _mod._clients.clear()
+            _mod._clients["anthropic"] = mock_client
+
+        result = invoke(
+            messages={"user": "Hi"},
+            model="claude-sonnet-4-6",
+            temperature=0.0,
+            max_tokens=4096,
+        )
+
+        self.assertEqual(result["response"], "Response")
+        # Should not pass system kwarg when absent.
+        call_kwargs = mock_client.messages.create.call_args.kwargs
+        self.assertNotIn("system", call_kwargs)
+
+
+@unittest.skipUnless(_module_available, _missing_reason)
+class TestInvokeOpenAIUserOnly(unittest.TestCase):
+    """invoke() with only a user message via OpenAI path."""
+
+    def test_user_only_openai(self):
+        mock_choice = MagicMock()
+        mock_choice.message.content = "Response"
+        mock_choice.finish_reason = "stop"
+
+        mock_response = MagicMock()
+        mock_response.choices = [mock_choice]
+        mock_response.model = "gpt-4o"
+        mock_response.usage.prompt_tokens = 3
+        mock_response.usage.completion_tokens = 1
+
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.return_value = mock_response
+
+        if hasattr(_mod, "_clients"):
+            _mod._clients.clear()
+            _mod._clients["openai"] = mock_client
+
+        result = invoke(
+            messages={"user": "Hi"},
+            model="gpt-4o",
+            temperature=0.5,
+            max_tokens=4096,
+        )
+
+        self.assertEqual(result["response"], "Response")
+        # Should not include a system message in the messages list.
+        call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+        messages_sent = call_kwargs["messages"]
+        roles = [m["role"] for m in messages_sent]
+        self.assertNotIn("system", roles)
+
+
+# ===================================================================
+# invoke — Gemini model
+# ===================================================================
+
+@unittest.skipUnless(_module_available, _missing_reason)
+class TestInvokeGeminiMocked(unittest.TestCase):
+    """invoke() with a Gemini model returns normalized result."""
+
+    def test_returns_normalized_result(self):
+        mock_choice = MagicMock()
+        mock_choice.message.content = "Hello from Gemini"
+        mock_choice.finish_reason = "stop"
+
+        mock_response = MagicMock()
+        mock_response.choices = [mock_choice]
+        mock_response.model = "gemini-pro"
+        mock_response.usage.prompt_tokens = 6
+        mock_response.usage.completion_tokens = 3
+
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.return_value = mock_response
+
+        if hasattr(_mod, "_clients"):
+            _mod._clients.clear()
+            _mod._clients["gemini"] = mock_client
+
+        result = invoke(
+            messages={"system": "Be helpful", "user": "Hi"},
+            model="gemini-pro",
+            temperature=0.5,
+            max_tokens=4096,
+        )
+
+        self.assertEqual(result["response"], "Hello from Gemini")
+        self.assertIn("input_tokens", result)
+        self.assertIn("output_tokens", result)
+        self.assertIn("latency_ms", result)
+        self.assertIn("finish_reason", result)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -192,11 +192,13 @@ def expand_matrix(config: dict) -> list[dict]:
         if len(temps) > 1:
             dimensions.append(("temperature", temps))
 
-    # Prompt file sweeps
+    # Prompt sweeps (file arrays and prompt arrays)
     prompts = config.get("prompts", [])
     for i, prompt in enumerate(prompts):
         if "file" in prompt and isinstance(prompt["file"], list):
             dimensions.append((f"prompt_{i}_file", prompt["file"]))
+        if "prompt" in prompt and isinstance(prompt["prompt"], list):
+            dimensions.append((f"prompt_{i}_prompt", prompt["prompt"]))
 
     # Build cartesian product
     if not dimensions:
@@ -240,7 +242,9 @@ def _build_run_spec(config: dict, overrides: dict) -> dict:
 
         # Resolve text
         if "prompt" in prompt:
-            text = prompt["prompt"]
+            text = overrides.get(f"prompt_{i}_prompt", prompt["prompt"])
+            if isinstance(text, list):
+                text = text[0]
         elif "file" in prompt:
             file_val = overrides.get(f"prompt_{i}_file", prompt["file"])
             if isinstance(file_val, list):
