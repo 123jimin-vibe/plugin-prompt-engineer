@@ -7,6 +7,7 @@ import tomllib
 from itertools import product
 from pathlib import Path
 
+from lib.io import ensure_utf8_stdio
 from lib.llm import invoke as llm_invoke
 
 
@@ -362,6 +363,7 @@ def dry_run(matrix: list[dict]) -> None:
 
 def main() -> None:
     """Entry point: parse → single-shot or config → invoke → format → output."""
+    ensure_utf8_stdio()
     args = parse_args(sys.argv[1:])
 
     fmt = "json" if args.json else ("toml" if args.toml else None)

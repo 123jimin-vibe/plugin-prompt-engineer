@@ -17,6 +17,7 @@ _lib_root = pathlib.Path(__file__).resolve().parents[3] / "plugin" / "lib"
 for _lib_name, _lib_file in [
     ("lib.apikey", "apikey.py"),
     ("lib.format", "format.py"),
+    ("lib.io", "io.py"),
     ("lib.llm", "llm.py"),
 ]:
     _lib_path = str(_lib_root / _lib_file)
