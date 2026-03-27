@@ -749,6 +749,56 @@ file = "x.md"
         self.assertIn("gpt-4o", output)
         self.assertIn("claude-sonnet-4-6", output)
 
+    def test_dry_run_shows_prompt_file_dimension(self):
+        """dry_run must list prompt file sweep dimension (bug t0009)."""
+        self._write_file("strict.md", "strict")
+        self._write_file("relaxed.md", "relaxed")
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+
+[[prompts]]
+role = "system"
+file = ["strict.md", "relaxed.md"]
+
+[[prompts]]
+role = "user"
+prompt = "test"
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+
+        buf = io.StringIO()
+        with patch("sys.stdout", buf):
+            dry_run(matrix)
+        output = buf.getvalue()
+        self.assertIn("2", output)  # total runs
+        # Must list the prompt file dimension values.
+        self.assertIn("strict.md", output)
+        self.assertIn("relaxed.md", output)
+
+    def test_dry_run_shows_prompt_text_dimension(self):
+        """dry_run must list inline prompt sweep dimension (bug t0009)."""
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+
+[[prompts]]
+role = "user"
+prompt = ["question A", "question B"]
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+
+        buf = io.StringIO()
+        with patch("sys.stdout", buf):
+            dry_run(matrix)
+        output = buf.getvalue()
+        self.assertIn("2", output)  # total runs
+        # Must list the inline prompt dimension values.
+        self.assertIn("question A", output)
+        self.assertIn("question B", output)
+
 
 # ===================================================================
 # Config-mode separator handling

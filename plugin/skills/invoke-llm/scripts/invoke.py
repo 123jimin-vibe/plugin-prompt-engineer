@@ -211,7 +211,9 @@ def expand_matrix(config: dict) -> list[dict]:
     runs = []
     for combo in product(*dim_values):
         overrides = dict(zip(dim_names, combo))
-        runs.append(_build_run_spec(config, overrides))
+        run = _build_run_spec(config, overrides)
+        run["_overrides"] = overrides
+        runs.append(run)
 
     return runs
 
@@ -343,17 +345,14 @@ def dry_run(matrix: list[dict]) -> None:
     """Print dimension summary and total count to stdout."""
     print(f"Total runs: {len(matrix)}")
 
-    # Collect unique values per dimension
     dims: dict[str, set] = {}
     for run in matrix:
-        dims.setdefault("model", set()).add(run.get("model", ""))
-        if "temperature" in run:
-            dims.setdefault("temperature", set()).add(str(run["temperature"]))
+        for key, val in run.get("_overrides", {}).items():
+            dims.setdefault(key, set()).add(str(val))
 
     for dim_name, values in dims.items():
         if len(values) > 1:
-            sorted_vals = sorted(values)
-            print(f"  {dim_name}: {', '.join(sorted_vals)}")
+            print(f"  {dim_name}: {', '.join(sorted(values))}")
 
 
 # ===================================================================
