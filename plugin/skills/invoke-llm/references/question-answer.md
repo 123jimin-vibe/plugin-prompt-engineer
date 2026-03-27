@@ -45,6 +45,36 @@ Common pitfalls (all stem from projecting your own understanding onto the questi
 
 Ground questions in realistic user inputs. Prefer harder questions that distinguish good prompts from bad.
 
+## Multi-turn evaluation
+
+Use the `assistant` role to inject a prior response, then ask the model to evaluate it:
+
+```toml
+# Used with prompt-engineer:invoke-llm skill.
+
+[generation]
+model = "claude-sonnet-4-6"
+temperature = 0.0
+
+[[prompts]]
+role = "system"
+file = "SKILL.md"
+
+[[prompts]]
+role = "user"
+prompt = "A user asks you to do X, then follows up with Y."
+
+[[prompts]]
+role = "assistant"
+prompt = ["candidate-answer-a.md", "candidate-answer-b.md"]
+
+[[prompts]]
+role = "user"
+prompt = "Rate the above response 1-5. Explain."
+```
+
+2 candidate answers = 2 runs. Each run evaluates a different assistant response.
+
 ## Tips
 
 - Use `--json` or `[output].file` to capture results for comparison.

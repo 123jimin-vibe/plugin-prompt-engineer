@@ -1,8 +1,55 @@
 """Shared LLM client logic — provider routing, client creation, unified invoke."""
 
 import time
+from dataclasses import dataclass
 
 from lib.apikey import require_api_key
+
+
+@dataclass(frozen=True, slots=True)
+class Message:
+    """A single message in a conversation."""
+
+    role: str  # "system", "user", or "assistant"
+    content: str
+
+
+def validate_messages(messages: list[Message]) -> None:
+    """Enforce ``system? (user assistant)* user`` sequence.
+
+    Raises ``SystemExit`` with a descriptive error on violation.
+    Call this **after** consecutive same-role entries have been joined.
+    """
+    if not messages:
+        raise SystemExit("No messages provided.")
+
+    idx = 0
+
+    # Optional leading system message.
+    if messages[idx].role == "system":
+        idx += 1
+
+    if idx >= len(messages):
+        raise SystemExit("Messages contain only a system prompt — at least one user message is required.")
+
+    # Remaining must alternate user/assistant, starting and ending with user.
+    if messages[idx].role != "user":
+        raise SystemExit(
+            f"Expected user message at position {idx}, got {messages[idx].role!r}."
+        )
+
+    for i in range(idx, len(messages)):
+        expected = "user" if (i - idx) % 2 == 0 else "assistant"
+        actual = messages[i].role
+        if actual != expected:
+            raise SystemExit(
+                f"Expected {expected!r} message at position {i}, got {actual!r}."
+            )
+
+    if messages[-1].role != "user":
+        raise SystemExit(
+            f"Messages must end with a user message, got {messages[-1].role!r}."
+        )
 
 _clients: dict = {}
 
@@ -43,31 +90,38 @@ def create_client(provider: str):
 
 
 def invoke(
-    messages: dict[str, str],
+    messages: list[Message],
     model: str,
     temperature: float,
     max_tokens: int,
 ) -> dict:
     """Call an LLM and return a normalized result dict.
 
-    *messages* has keys ``"system"`` and/or ``"user"`` with string values.
+    *messages* is a validated ``list[Message]`` (see ``validate_messages``).
     Returns dict with: response, model, input_tokens, output_tokens,
     latency_ms, finish_reason.
     """
+    validate_messages(messages)
     provider = resolve_provider(model)
     client = create_client(provider)
 
     start = time.perf_counter()
 
     if provider == "anthropic":
+        # Anthropic: system prompt is a top-level kwarg, not in messages.
+        api_messages = [
+            {"role": m.role, "content": m.content}
+            for m in messages if m.role != "system"
+        ]
         kwargs: dict = {
             "model": model,
             "max_tokens": max_tokens,
             "temperature": temperature,
-            "messages": [{"role": "user", "content": messages.get("user", "")}],
+            "messages": api_messages,
         }
-        if "system" in messages and messages["system"]:
-            kwargs["system"] = messages["system"]
+        system = [m for m in messages if m.role == "system"]
+        if system:
+            kwargs["system"] = system[0].content
 
         resp = client.messages.create(**kwargs)
         elapsed_ms = int((time.perf_counter() - start) * 1000)
@@ -82,10 +136,7 @@ def invoke(
         }
 
     # OpenAI / Gemini (OpenAI-compatible)
-    oai_messages = []
-    if "system" in messages and messages["system"]:
-        oai_messages.append({"role": "system", "content": messages["system"]})
-    oai_messages.append({"role": "user", "content": messages.get("user", "")})
+    oai_messages = [{"role": m.role, "content": m.content} for m in messages]
 
     resp = client.chat.completions.create(
         model=model,

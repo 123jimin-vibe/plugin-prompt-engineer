@@ -70,6 +70,12 @@ if _module_available:
     substitute_vars = _mod.substitute_vars
     format_result = _mod.format_result
     dry_run = _mod.dry_run
+    from lib.llm import Message
+
+
+def _content_by_role(messages, role):
+    """Extract concatenated content for a role from list[Message]."""
+    return "\n\n".join(m.content for m in messages if m.role == role)
 
 
 # ===================================================================
@@ -83,18 +89,18 @@ class TestParseArgsSingleShot(unittest.TestCase):
     def test_positional_as_user_prompt(self):
         ns = parse_args(["hello world"])
         # Positional is shorthand for -u.
-        prompt = build_prompt(ns)
-        self.assertIn("hello world", prompt.get("user", ""))
+        msgs = build_prompt(ns)
+        self.assertIn("hello world", _content_by_role(msgs, "user"))
 
     def test_u_flag(self):
         ns = parse_args(["-u", "prompt text"])
-        prompt = build_prompt(ns)
-        self.assertIn("prompt text", prompt["user"])
+        msgs = build_prompt(ns)
+        self.assertIn("prompt text", _content_by_role(msgs, "user"))
 
     def test_s_flag(self):
         ns = parse_args(["-s", "system text", "-u", "user text"])
-        prompt = build_prompt(ns)
-        self.assertIn("system text", prompt["system"])
+        msgs = build_prompt(ns)
+        self.assertIn("system text", _content_by_role(msgs, "system"))
 
     def test_default_model(self):
         ns = parse_args(["-u", "hi"])
@@ -144,8 +150,8 @@ class TestParseArgsFileInputs(unittest.TestCase):
             fpath = f.name
         try:
             ns = parse_args(["-U", fpath])
-            prompt = build_prompt(ns)
-            self.assertIn("file user prompt", prompt["user"])
+            msgs = build_prompt(ns)
+            self.assertIn("file user prompt", _content_by_role(msgs, "user"))
         finally:
             os.unlink(fpath)
 
@@ -157,8 +163,8 @@ class TestParseArgsFileInputs(unittest.TestCase):
             fpath = f.name
         try:
             ns = parse_args(["-S", fpath, "-u", "user text"])
-            prompt = build_prompt(ns)
-            self.assertIn("file system prompt", prompt["system"])
+            msgs = build_prompt(ns)
+            self.assertIn("file system prompt", _content_by_role(msgs, "system"))
         finally:
             os.unlink(fpath)
 
@@ -194,8 +200,8 @@ class TestBuildPromptOrder(unittest.TestCase):
 
     def test_multiple_user_prompts_joined(self):
         ns = parse_args(["-u", "first", "-u", "second"])
-        prompt = build_prompt(ns)
-        user = prompt["user"]
+        msgs = build_prompt(ns)
+        user = _content_by_role(msgs, "user")
         # Both present, first before second.
         idx1 = user.index("first")
         idx2 = user.index("second")
@@ -203,15 +209,16 @@ class TestBuildPromptOrder(unittest.TestCase):
 
     def test_default_separator(self):
         ns = parse_args(["-u", "aaa", "-u", "bbb"])
-        prompt = build_prompt(ns)
+        msgs = build_prompt(ns)
+        user = _content_by_role(msgs, "user")
         # Default separator is "\n\n".
-        self.assertIn("aaa\n\nbbb", prompt["user"])
+        self.assertIn("aaa\n\nbbb", user)
 
     def test_positional_and_u_combined(self):
         """Positional is shorthand for -u, order preserved."""
         ns = parse_args(["positional", "-u", "flagged"])
-        prompt = build_prompt(ns)
-        user = prompt["user"]
+        msgs = build_prompt(ns)
+        user = _content_by_role(msgs, "user")
         idx1 = user.index("positional")
         idx2 = user.index("flagged")
         self.assertLess(idx1, idx2)
@@ -219,10 +226,10 @@ class TestBuildPromptOrder(unittest.TestCase):
     def test_system_only_no_user(self):
         """System prompt without user prompt."""
         ns = parse_args(["-s", "sys only"])
-        prompt = build_prompt(ns)
-        self.assertIn("sys only", prompt.get("system", ""))
+        msgs = build_prompt(ns)
+        self.assertIn("sys only", _content_by_role(msgs, "system"))
         # user may be empty or absent
-        self.assertFalse(prompt.get("user", ""))
+        self.assertFalse(_content_by_role(msgs, "user"))
 
     def test_interleaved_file_and_inline_order(self):
         """File and inline inputs interleaved preserve command-line order."""
@@ -233,8 +240,8 @@ class TestBuildPromptOrder(unittest.TestCase):
             fpath = f.name
         try:
             ns = parse_args(["-u", "first", "-U", fpath, "-u", "third"])
-            prompt = build_prompt(ns)
-            user = prompt["user"]
+            msgs = build_prompt(ns)
+            user = _content_by_role(msgs, "user")
             idx1 = user.index("first")
             idx2 = user.index("from file")
             idx3 = user.index("third")
@@ -451,7 +458,9 @@ prompt = ["question one", "question two"]
         matrix = expand_matrix(config)
         self.assertEqual(len(matrix), 2)
         # Each run should have a different user prompt.
-        user_prompts = [run["messages"]["user"] for run in matrix]
+        user_prompts = [
+            m.content for run in matrix for m in run["messages"] if m.role == "user"
+        ]
         self.assertIn("question one", user_prompts)
         self.assertIn("question two", user_prompts)
 
@@ -488,6 +497,113 @@ prompt = ["question one", "question two"]
         config = load_config(path)
         matrix = expand_matrix(config)
         self.assertEqual(len(matrix), 4)
+
+    def test_multi_turn_with_assistant(self):
+        """Config with user/assistant/user produces correct message sequence."""
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+
+[[prompts]]
+role = "user"
+prompt = "What is X?"
+
+[[prompts]]
+role = "assistant"
+prompt = "X is Y."
+
+[[prompts]]
+role = "user"
+prompt = "Was that correct?"
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 1)
+        msgs = matrix[0]["messages"]
+        roles = [m.role for m in msgs]
+        self.assertEqual(roles, ["user", "assistant", "user"])
+
+    def test_multi_turn_with_system_and_assistant(self):
+        """system + user/assistant/user produces 4-message sequence."""
+        self._write_file("sys.md", "Be helpful")
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+
+[[prompts]]
+role = "system"
+file = "sys.md"
+
+[[prompts]]
+role = "user"
+prompt = "Q1"
+
+[[prompts]]
+role = "assistant"
+prompt = "A1"
+
+[[prompts]]
+role = "user"
+prompt = "Q2"
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 1)
+        msgs = matrix[0]["messages"]
+        roles = [m.role for m in msgs]
+        self.assertEqual(roles, ["system", "user", "assistant", "user"])
+        self.assertEqual(msgs[0].content, "Be helpful")
+
+    def test_assistant_sweep(self):
+        """Assistant prompt array is a sweep dimension."""
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+
+[[prompts]]
+role = "user"
+prompt = "What is X?"
+
+[[prompts]]
+role = "assistant"
+prompt = ["X is Y.", "X is Z."]
+
+[[prompts]]
+role = "user"
+prompt = "Was that correct?"
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 2)
+        # Each run should have a different assistant response.
+        assistant_contents = [
+            m.content for run in matrix for m in run["messages"] if m.role == "assistant"
+        ]
+        self.assertIn("X is Y.", assistant_contents)
+        self.assertIn("X is Z.", assistant_contents)
+
+    def test_consecutive_same_role_joined(self):
+        """Two consecutive user prompts are joined, not left as separate messages."""
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+
+[[prompts]]
+role = "user"
+prompt = "part one"
+
+[[prompts]]
+role = "user"
+prompt = "part two"
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        msgs = matrix[0]["messages"]
+        # Should be joined into a single user message.
+        self.assertEqual(len(msgs), 1)
+        self.assertEqual(msgs[0].role, "user")
+        self.assertIn("part one", msgs[0].content)
+        self.assertIn("part two", msgs[0].content)
 
 
 # ===================================================================
@@ -567,7 +683,8 @@ substitute = true
         config = load_config(path)
         matrix = expand_matrix(config)
         self.assertEqual(len(matrix), 1)
-        user_msg = matrix[0]["messages"]["user"]
+        user_msgs = [m.content for m in matrix[0]["messages"] if m.role == "user"]
+        user_msg = user_msgs[0]
         # The placeholder should be replaced with file content.
         self.assertIn("important context here", user_msg)
         self.assertNotIn("{{input}}", user_msg)
@@ -847,7 +964,8 @@ file = "b.md"
 """)
         config = load_config(path)
         matrix = expand_matrix(config)
-        user_msg = matrix[0]["messages"]["user"]
+        user_msgs = [m.content for m in matrix[0]["messages"] if m.role == "user"]
+        user_msg = user_msgs[0]
         self.assertIn("---", user_msg)
         self.assertIn("part a", user_msg)
         self.assertIn("part b", user_msg)

@@ -36,18 +36,20 @@ if _module_available:
         _module_available = False
         _missing_reason = f"llm.py failed to load: {_exc}"
 
-_REQUIRED_FUNCS = ["resolve_provider", "create_client", "invoke"]
+_REQUIRED_FUNCS = ["resolve_provider", "create_client", "invoke", "Message", "validate_messages"]
 if _module_available:
     for _fn_name in _REQUIRED_FUNCS:
         if not hasattr(_mod, _fn_name):
             _module_available = False
-            _missing_reason = f"llm.py is missing function: {_fn_name}"
+            _missing_reason = f"llm.py is missing: {_fn_name}"
             break
 
 if _module_available:
     resolve_provider = _mod.resolve_provider
     create_client = _mod.create_client
     invoke = _mod.invoke
+    Message = _mod.Message
+    validate_messages = _mod.validate_messages
 
 
 # ===================================================================
@@ -179,7 +181,7 @@ class TestInvokeAnthropicMocked(unittest.TestCase):
             _mod._clients["anthropic"] = mock_client
 
         result = invoke(
-            messages={"system": "Be helpful", "user": "Hi"},
+            messages=[Message("system", "Be helpful"), Message("user", "Hi")],
             model="claude-sonnet-4-6",
             temperature=0.0,
             max_tokens=4096,
@@ -218,7 +220,7 @@ class TestInvokeOpenAIMocked(unittest.TestCase):
             _mod._clients["openai"] = mock_client
 
         result = invoke(
-            messages={"system": "Be helpful", "user": "Hi"},
+            messages=[Message("system", "Be helpful"), Message("user", "Hi")],
             model="gpt-4o",
             temperature=0.5,
             max_tokens=4096,
@@ -277,7 +279,7 @@ class TestInvokeAnthropicUserOnly(unittest.TestCase):
             _mod._clients["anthropic"] = mock_client
 
         result = invoke(
-            messages={"user": "Hi"},
+            messages=[Message("user", "Hi")],
             model="claude-sonnet-4-6",
             temperature=0.0,
             max_tokens=4096,
@@ -312,7 +314,7 @@ class TestInvokeOpenAIUserOnly(unittest.TestCase):
             _mod._clients["openai"] = mock_client
 
         result = invoke(
-            messages={"user": "Hi"},
+            messages=[Message("user", "Hi")],
             model="gpt-4o",
             temperature=0.5,
             max_tokens=4096,
@@ -353,7 +355,7 @@ class TestInvokeGeminiMocked(unittest.TestCase):
             _mod._clients["gemini"] = mock_client
 
         result = invoke(
-            messages={"system": "Be helpful", "user": "Hi"},
+            messages=[Message("system", "Be helpful"), Message("user", "Hi")],
             model="gemini-pro",
             temperature=0.5,
             max_tokens=4096,
@@ -364,6 +366,172 @@ class TestInvokeGeminiMocked(unittest.TestCase):
         self.assertIn("output_tokens", result)
         self.assertIn("latency_ms", result)
         self.assertIn("finish_reason", result)
+
+
+# ===================================================================
+# validate_messages
+# ===================================================================
+
+@unittest.skipUnless(_module_available, _missing_reason)
+class TestValidateMessagesValid(unittest.TestCase):
+    """Valid message sequences pass without error."""
+
+    def test_user_only(self):
+        validate_messages([Message("user", "Hi")])
+
+    def test_system_user(self):
+        validate_messages([Message("system", "Be helpful"), Message("user", "Hi")])
+
+    def test_multi_turn(self):
+        validate_messages([
+            Message("system", "Be helpful"),
+            Message("user", "Q1"),
+            Message("assistant", "A1"),
+            Message("user", "Q2"),
+        ])
+
+    def test_multi_turn_no_system(self):
+        validate_messages([
+            Message("user", "Q1"),
+            Message("assistant", "A1"),
+            Message("user", "Q2"),
+        ])
+
+
+@unittest.skipUnless(_module_available, _missing_reason)
+class TestValidateMessagesInvalid(unittest.TestCase):
+    """Invalid message sequences raise SystemExit."""
+
+    def test_empty(self):
+        with self.assertRaises(SystemExit):
+            validate_messages([])
+
+    def test_system_only(self):
+        with self.assertRaises(SystemExit):
+            validate_messages([Message("system", "sys")])
+
+    def test_starts_with_assistant(self):
+        with self.assertRaises(SystemExit):
+            validate_messages([Message("assistant", "A"), Message("user", "Q")])
+
+    def test_ends_with_assistant(self):
+        with self.assertRaises(SystemExit):
+            validate_messages([Message("user", "Q"), Message("assistant", "A")])
+
+    def test_double_user(self):
+        """After joining, two consecutive user messages should not exist."""
+        with self.assertRaises(SystemExit):
+            validate_messages([
+                Message("user", "Q1"),
+                Message("user", "Q2"),
+            ])
+
+    def test_double_assistant(self):
+        with self.assertRaises(SystemExit):
+            validate_messages([
+                Message("user", "Q"),
+                Message("assistant", "A1"),
+                Message("assistant", "A2"),
+                Message("user", "Q2"),
+            ])
+
+    def test_assistant_after_system(self):
+        with self.assertRaises(SystemExit):
+            validate_messages([
+                Message("system", "sys"),
+                Message("assistant", "A"),
+                Message("user", "Q"),
+            ])
+
+
+# ===================================================================
+# invoke — multi-turn messages
+# ===================================================================
+
+@unittest.skipUnless(_module_available, _missing_reason)
+class TestInvokeMultiTurnAnthropicMocked(unittest.TestCase):
+    """invoke() passes multi-turn messages correctly to Anthropic."""
+
+    def test_multi_turn_passes_all_messages(self):
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(text="Final answer")]
+        mock_response.model = "claude-sonnet-4-6"
+        mock_response.usage.input_tokens = 20
+        mock_response.usage.output_tokens = 5
+        mock_response.stop_reason = "end_turn"
+
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = mock_response
+
+        if hasattr(_mod, "_clients"):
+            _mod._clients.clear()
+            _mod._clients["anthropic"] = mock_client
+
+        result = invoke(
+            messages=[
+                Message("system", "Be helpful"),
+                Message("user", "Q1"),
+                Message("assistant", "A1"),
+                Message("user", "Q2"),
+            ],
+            model="claude-sonnet-4-6",
+            temperature=0.0,
+            max_tokens=4096,
+        )
+
+        self.assertEqual(result["response"], "Final answer")
+        call_kwargs = mock_client.messages.create.call_args.kwargs
+        # System extracted to top-level kwarg.
+        self.assertEqual(call_kwargs["system"], "Be helpful")
+        # Messages should contain user/assistant turns only.
+        api_messages = call_kwargs["messages"]
+        self.assertEqual(len(api_messages), 3)
+        self.assertEqual(api_messages[0]["role"], "user")
+        self.assertEqual(api_messages[1]["role"], "assistant")
+        self.assertEqual(api_messages[2]["role"], "user")
+
+
+@unittest.skipUnless(_module_available, _missing_reason)
+class TestInvokeMultiTurnOpenAIMocked(unittest.TestCase):
+    """invoke() passes multi-turn messages correctly to OpenAI."""
+
+    def test_multi_turn_passes_all_messages(self):
+        mock_choice = MagicMock()
+        mock_choice.message.content = "Final answer"
+        mock_choice.finish_reason = "stop"
+
+        mock_response = MagicMock()
+        mock_response.choices = [mock_choice]
+        mock_response.model = "gpt-4o"
+        mock_response.usage.prompt_tokens = 20
+        mock_response.usage.completion_tokens = 5
+
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.return_value = mock_response
+
+        if hasattr(_mod, "_clients"):
+            _mod._clients.clear()
+            _mod._clients["openai"] = mock_client
+
+        result = invoke(
+            messages=[
+                Message("system", "Be helpful"),
+                Message("user", "Q1"),
+                Message("assistant", "A1"),
+                Message("user", "Q2"),
+            ],
+            model="gpt-4o",
+            temperature=0.5,
+            max_tokens=4096,
+        )
+
+        self.assertEqual(result["response"], "Final answer")
+        call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+        # OpenAI gets system in the messages array.
+        api_messages = call_kwargs["messages"]
+        self.assertEqual(len(api_messages), 4)
+        roles = [m["role"] for m in api_messages]
+        self.assertEqual(roles, ["system", "user", "assistant", "user"])
 
 
 if __name__ == "__main__":

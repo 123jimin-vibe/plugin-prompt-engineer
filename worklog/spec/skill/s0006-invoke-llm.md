@@ -36,7 +36,16 @@ Positional and flag inputs build a single request.
 
 ### Prompt assembly
 
-All `-u`, `-U`, `-s`, `-S`, and positional inputs are concatenated **in the order they appear on the command line**. Same-role entries are joined by the default separator (`"\n\n"`). The result is one system message and one user message.
+All `-u`, `-U`, `-s`, `-S`, and positional inputs are concatenated **in the order they appear on the command line**. Consecutive same-role entries are joined by the default separator (`"\n\n"`). The result is one system message and one user message.
+
+## Message sequence
+
+LLM APIs require the pattern `system? (user assistant)* user`. This is enforced after assembly:
+
+- **Consecutive same-role entries** are joined with the separator into a single message.
+- **Out-of-place role** (e.g. assistant first, assistant last, two user turns without an assistant between them after joining) causes a clear error naming the offending position.
+
+This applies to both single-shot and config modes.
 
 ## Config mode
 
@@ -63,7 +72,7 @@ separator = "\n\n"                              # default join between same-role
 input = "inputs/case1.md"            # named file refs, content read at runtime
 
 [[prompts]]
-role = "system"                       # "system" or "user"
+role = "system"                       # "system", "user", or "assistant"
 file = ["strict.md", "relaxed.md"]    # array = sweep dimension
 
 [[prompts]]

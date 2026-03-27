@@ -8,7 +8,7 @@ from itertools import product
 from pathlib import Path
 
 from lib.io import ensure_utf8_stdio
-from lib.llm import invoke as llm_invoke
+from lib.llm import Message, invoke as llm_invoke
 
 
 # ===================================================================
@@ -117,24 +117,25 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 _DEFAULT_SEPARATOR = "\n\n"
 
 
-def build_prompt(args: argparse.Namespace) -> dict[str, str]:
-    """Assemble system/user messages from flags in insertion order."""
+def build_prompt(args: argparse.Namespace) -> list[Message]:
+    """Assemble messages from flags in insertion order."""
     entries = getattr(args, "_ordered_prompts", [])
     entries.sort(key=lambda e: e.order)
 
-    system_parts: list[str] = []
-    user_parts: list[str] = []
+    raw = [Message(e.role, e.text) for e in entries]
+    return _join_consecutive(raw, _DEFAULT_SEPARATOR)
 
-    for entry in entries:
-        if entry.role == "system":
-            system_parts.append(entry.text)
+
+def _join_consecutive(messages: list[Message], separator: str) -> list[Message]:
+    """Merge consecutive same-role messages with *separator*."""
+    if not messages:
+        return []
+    result = [messages[0]]
+    for msg in messages[1:]:
+        if msg.role == result[-1].role:
+            result[-1] = Message(msg.role, result[-1].content + separator + msg.content)
         else:
-            user_parts.append(entry.text)
-
-    result: dict[str, str] = {}
-    if system_parts:
-        result["system"] = _DEFAULT_SEPARATOR.join(system_parts)
-    result["user"] = _DEFAULT_SEPARATOR.join(user_parts) if user_parts else ""
+            result.append(msg)
     return result
 
 
@@ -234,9 +235,8 @@ def _build_run_spec(config: dict, overrides: dict) -> dict:
 
     max_tokens = gen.get("max_tokens", 4096)
 
-    # Assemble prompts
-    system_parts: list[str] = []
-    user_parts: list[str] = []
+    # Assemble ordered message list
+    raw_messages: list[Message] = []
     vars_content = _load_vars(config)
 
     for i, prompt in enumerate(config.get("prompts", [])):
@@ -259,16 +259,9 @@ def _build_run_spec(config: dict, overrides: dict) -> dict:
         if do_substitute:
             text = substitute_vars(text, vars_content)
 
-        if role == "system":
-            system_parts.append(text)
-        else:
-            user_parts.append(text)
+        raw_messages.append(Message(role, text))
 
-    messages: dict[str, str] = {}
-    if system_parts:
-        messages["system"] = separator.join(system_parts)
-    if user_parts:
-        messages["user"] = separator.join(user_parts)
+    messages = _join_consecutive(raw_messages, separator)
 
     spec = {
         "model": model,
@@ -422,7 +415,7 @@ def main() -> None:
     else:
         # Single-shot mode
         messages = build_prompt(args)
-        if not messages.get("user") and not messages.get("system"):
+        if not messages:
             raise SystemExit("No prompts provided.")
 
         temp = args.t if args.t is not None else 1.0

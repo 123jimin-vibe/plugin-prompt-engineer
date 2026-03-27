@@ -13,7 +13,7 @@ separator = "\n\n"                              # default join between same-role
 input = "inputs/case1.md"            # named file refs, content read at runtime
 
 [[prompts]]
-role = "system"                       # "system" or "user"
+role = "system"                       # "system", "user", or "assistant"
 file = ["strict.md", "relaxed.md"]    # array = sweep dimension
 
 [[prompts]]
@@ -47,11 +47,11 @@ Named file references. Keys become variable names; values are file paths. Conten
 
 ### `[[prompts]]`
 
-Ordered list of prompt entries. Each entry contributes to either the system or user message.
+Ordered list of prompt entries. Entries are assembled into a message sequence matching the pattern `system? (user assistant)* user`. Consecutive same-role entries are joined with the separator.
 
 | Key | Type | Required | Description |
 |-----|------|----------|-------------|
-| `role` | string | yes | `"system"` or `"user"`. |
+| `role` | string | yes | `"system"`, `"user"`, or `"assistant"`. |
 | `prompt` | string | one of `prompt`/`file` | Inline text. |
 | `file` | string or array | one of `prompt`/`file` | File path(s). Array = sweep dimension. |
 | `substitute` | bool | no | Replace `{{key}}` placeholders with `[vars]` content. |

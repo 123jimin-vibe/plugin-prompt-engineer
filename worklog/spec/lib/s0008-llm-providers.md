@@ -37,7 +37,7 @@ Unknown provider names are a fatal error.
 
 `invoke(messages, model, temperature, max_tokens)` dispatches to the correct provider and returns a normalized dict: `response`, `model`, `input_tokens`, `output_tokens`, `latency_ms`, `finish_reason`.
 
-`messages` is a dict with `"system"` and/or `"user"` string values — not a message list. The function builds the provider-specific message format internally.
+`messages` is a `list[Message]` where `Message` is a frozen dataclass with `role` and `content` fields. Roles: `"system"`, `"user"`, `"assistant"`. The sequence must match `system? (user assistant)* user` — `validate_messages()` enforces this before dispatch. The function converts to provider-specific format internally (Anthropic: system extracted to top-level kwarg; OpenAI/Gemini: passed as-is).
 
 ## Anticipated Changes
 
