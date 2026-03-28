@@ -53,7 +53,7 @@ if _module_available:
 
 _REQUIRED_FUNCS = [
     "parse_args", "build_prompt", "load_config", "expand_matrix",
-    "substitute_vars", "format_result", "dry_run",
+    "substitute_vars", "format_result", "dry_run", "apply_flag_overrides",
 ]
 if _module_available:
     for _fn_name in _REQUIRED_FUNCS:
@@ -70,6 +70,7 @@ if _module_available:
     substitute_vars = _mod.substitute_vars
     format_result = _mod.format_result
     dry_run = _mod.dry_run
+    apply_flag_overrides = _mod.apply_flag_overrides
     from lib.llm import Message
 
 
@@ -104,7 +105,7 @@ class TestParseArgsSingleShot(unittest.TestCase):
 
     def test_default_model(self):
         ns = parse_args(["-u", "hi"])
-        self.assertEqual(ns.m, "claude-sonnet-4-6")
+        self.assertIsNone(ns.m)
 
     def test_custom_model(self):
         ns = parse_args(["-m", "gpt-4o", "-u", "hi"])
@@ -112,7 +113,7 @@ class TestParseArgsSingleShot(unittest.TestCase):
 
     def test_default_max_tokens(self):
         ns = parse_args(["-u", "hi"])
-        self.assertEqual(ns.max_tokens, 4096)
+        self.assertIsNone(ns.max_tokens)
 
     def test_custom_max_tokens(self):
         ns = parse_args(["--max-tokens", "1024", "-u", "hi"])
@@ -188,6 +189,71 @@ class TestParseArgsOutputFlags(unittest.TestCase):
     def test_o_flag(self):
         ns = parse_args(["-o", "out.txt", "-u", "hi"])
         self.assertEqual(ns.o, "out.txt")
+
+
+# ===================================================================
+# apply_flag_overrides
+# ===================================================================
+
+@unittest.skipUnless(_module_available, _missing_reason)
+class TestApplyFlagOverrides(unittest.TestCase):
+    """CLI flags override TOML config values."""
+
+    def _base_config(self):
+        return {
+            "generation": {
+                "model": ["gpt-4o", "claude-sonnet-4-6"],
+                "temperature": [0.0, 1.0],
+                "max_tokens": 4096,
+            },
+            "prompts": [{"role": "user", "prompt": "test"}],
+        }
+
+    def test_model_flag_overrides_config(self):
+        config = self._base_config()
+        args = parse_args(["-c", "dummy.toml", "-m", "gpt-5"])
+        apply_flag_overrides(config, args)
+        self.assertEqual(config["generation"]["model"], "gpt-5")
+
+    def test_temperature_flag_overrides_config(self):
+        config = self._base_config()
+        args = parse_args(["-c", "dummy.toml", "-t", "0.7"])
+        apply_flag_overrides(config, args)
+        self.assertEqual(config["generation"]["temperature"], 0.7)
+
+    def test_max_tokens_flag_overrides_config(self):
+        config = self._base_config()
+        args = parse_args(["-c", "dummy.toml", "--max-tokens", "2048"])
+        apply_flag_overrides(config, args)
+        self.assertEqual(config["generation"]["max_tokens"], 2048)
+
+    def test_output_flag_overrides_config(self):
+        config = self._base_config()
+        config["output"] = {"file": "/old/path.jsonl"}
+        args = parse_args(["-c", "dummy.toml", "-o", "new.jsonl"])
+        apply_flag_overrides(config, args)
+        self.assertTrue(config["output"]["file"].endswith("new.jsonl"))
+
+    def test_no_flags_leaves_config_unchanged(self):
+        config = self._base_config()
+        original_model = config["generation"]["model"][:]
+        original_temp = config["generation"]["temperature"][:]
+        args = parse_args(["-c", "dummy.toml"])
+        apply_flag_overrides(config, args)
+        self.assertEqual(config["generation"]["model"], original_model)
+        self.assertEqual(config["generation"]["temperature"], original_temp)
+        self.assertEqual(config["generation"]["max_tokens"], 4096)
+
+    def test_model_flag_collapses_sweep(self):
+        """A single -m flag replaces an array sweep with a scalar."""
+        config = self._base_config()
+        args = parse_args(["-c", "dummy.toml", "-m", "gpt-5"])
+        apply_flag_overrides(config, args)
+        matrix = expand_matrix(config)
+        # Temperature sweep still has 2 values, but model is now scalar.
+        self.assertEqual(len(matrix), 2)
+        for run in matrix:
+            self.assertEqual(run["model"], "gpt-5")
 
 
 # ===================================================================

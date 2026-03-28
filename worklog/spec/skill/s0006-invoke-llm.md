@@ -9,7 +9,7 @@ Raw LLM API calls (text in, text out). No tool use, no agent context, no skills.
 
 ## Modes
 
-Two mutually exclusive modes: **single-shot** (CLI flags) and **config** (TOML file). `-c` is mutually exclusive with single-shot flags.
+Two mutually exclusive modes: **single-shot** (CLI flags) and **config** (TOML file). Prompt flags (`-u`, `-U`, `-s`, `-S`, positional) are mutually exclusive with `-c`. Generation and output flags override their TOML counterparts when used with `-c`.
 
 ## Single-shot mode
 
@@ -102,6 +102,19 @@ separator = "\n---\n"                 # overrides [generation].separator for thi
 [output]
 file = "results.jsonl"
 ```
+
+## Flag overrides in config mode
+
+When generation or output flags are passed alongside `-c`, they override the corresponding TOML values:
+
+| Flag | Overrides | Effect |
+|------|-----------|--------|
+| `-m MODEL` | `[generation].model` | Replaces model (collapses any sweep to this single model) |
+| `-t TEMP` | `[generation].temperature` | Replaces temperature (collapses any sweep to this single value) |
+| `--max-tokens N` | `[generation].max_tokens` | Replaces max tokens |
+| `-o FILE` | `[output].file` | Replaces output file path |
+
+Flags that are not explicitly passed do not override — config values are used as-is. Prompt flags (`-u`, `-U`, `-s`, `-S`, positional) remain mutually exclusive with `-c`.
 
 ## Provider routing
 

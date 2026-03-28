@@ -76,9 +76,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
     # Generation
     gen_group = parser.add_argument_group("generation")
-    gen_group.add_argument("-m", default="claude-sonnet-4-6", metavar="MODEL", help="Model ID.")
+    gen_group.add_argument("-m", default=None, metavar="MODEL", help="Model ID.")
     gen_group.add_argument("-t", type=float, default=None, metavar="TEMP", help="Temperature.")
-    gen_group.add_argument("--max-tokens", type=int, default=4096, metavar="N", help="Max output tokens.")
+    gen_group.add_argument("--max-tokens", type=int, default=None, metavar="N", help="Max output tokens.")
 
     # Output
     out_group = parser.add_argument_group("output")
@@ -142,6 +142,20 @@ def _join_consecutive(messages: list[Message], separator: str) -> list[Message]:
 # ===================================================================
 # Config mode
 # ===================================================================
+
+
+def apply_flag_overrides(config: dict, args: argparse.Namespace) -> dict:
+    """Apply CLI flag overrides to a loaded config dict. Mutates *config*."""
+    gen = config.setdefault("generation", {})
+    if args.m is not None:
+        gen["model"] = args.m
+    if args.t is not None:
+        gen["temperature"] = args.t
+    if args.max_tokens is not None:
+        gen["max_tokens"] = args.max_tokens
+    if args.o is not None:
+        config.setdefault("output", {})["file"] = str(Path(args.o).resolve())
+    return config
 
 
 def load_config(path: str) -> dict:
@@ -362,8 +376,9 @@ def main() -> None:
     fmt = "json" if args.json else ("toml" if args.toml else None)
 
     if args.c:
-        # Config mode
+        # Config mode — apply flag overrides before matrix expansion
         config = load_config(args.c)
+        apply_flag_overrides(config, args)
         matrix = expand_matrix(config)
 
         if args.dry_run:
@@ -418,12 +433,14 @@ def main() -> None:
         if not messages:
             raise SystemExit("No prompts provided.")
 
+        model = args.m or "claude-sonnet-4-6"
         temp = args.t if args.t is not None else 1.0
+        max_tokens = args.max_tokens or 4096
         result = llm_invoke(
             messages=messages,
-            model=args.m,
+            model=model,
             temperature=temp,
-            max_tokens=args.max_tokens,
+            max_tokens=max_tokens,
         )
 
         formatted = format_result(result, fmt, args.q)
