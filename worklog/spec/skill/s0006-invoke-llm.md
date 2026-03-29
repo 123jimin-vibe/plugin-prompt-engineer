@@ -65,11 +65,11 @@ invoke.py -c run.toml --toml
 [generation]
 model = ["claude-sonnet-4-6", "gpt-5.4-mini"]   # scalar or array (sweep)
 temperature = [0.0, 0.5, 1.0]                  # scalar or array (sweep)
-max_tokens = 4096                               # scalar only
+max_tokens = [512, 1024, 4096]                  # scalar or array (sweep)
 separator = "\n\n"                              # default join between same-role entries
 
 [vars]
-input = "inputs/case1.md"            # named file refs, content read at runtime
+input = ["inputs/case1.md", "inputs/case2.md"]  # scalar or array (sweep); content read at runtime
 
 [[prompts]]
 role = "system"                       # "system", "user", or "assistant"
@@ -88,11 +88,11 @@ separator = "\n---\n"                 # overrides [generation].separator for thi
 
 **Comment convention:** Start config files with `# Used with prompt-engineer:invoke-llm skill.` for identification.
 
-**Matrix:** Cartesian product of all array values across `[generation]` and `[[prompts]]`. Example above: 2 models × 3 temps × 2 system files = 12 runs.
+**Matrix:** Cartesian product of all array values across `[generation]`, `[vars]`, and `[[prompts]]`. Example above: 2 models × 3 temps × 2 inputs × 2 system files = 24 runs.
 
 **Path resolution:** All file paths (`file`, `[vars]`, `[output].file`) resolve relative to the TOML file's parent directory.
 
-**Variable substitution:** When `substitute = true`, `{{key}}` placeholders are replaced with content from `[vars]`. A reference to a missing var is an error — the run aborts with a message naming the unresolved key.
+**Variable substitution:** When `substitute = true`, `{{key}}` placeholders are replaced with content from `[vars]`. Array var values are sweep dimensions — each file path in the array produces a separate run with that file's content. A reference to a missing var is an error — the run aborts with a message naming the unresolved key.
 
 **Per-run errors** are recorded without aborting the sweep. A summary table prints to stderr after completion.
 

@@ -6,11 +6,11 @@
 [generation]
 model = ["claude-sonnet-4-6", "gpt-5.4-mini"]   # scalar or array (sweep)
 temperature = [0.0, 0.5, 1.0]                  # scalar or array (sweep)
-max_tokens = 4096                               # scalar only
+max_tokens = [512, 1024, 4096]                  # scalar or array (sweep)
 separator = "\n\n"                              # default join between same-role entries
 
 [vars]
-input = "inputs/case1.md"            # named file refs, content read at runtime
+input = ["inputs/case1.md", "inputs/case2.md"]  # scalar or array (sweep); content read at runtime
 
 [[prompts]]
 role = "system"                       # "system", "user", or "assistant"
@@ -38,12 +38,12 @@ file = "results.jsonl"
 |-----|------|---------|-------------|
 | `model` | string or array | `"claude-sonnet-4-6"` | Model ID(s). Array = sweep dimension. |
 | `temperature` | float or array | — | Temperature(s). Array = sweep dimension. |
-| `max_tokens` | int | `4096` | Max output tokens. Scalar only. |
+| `max_tokens` | int or array | `4096` | Max output tokens. Array = sweep dimension. |
 | `separator` | string | `"\n\n"` | Default join between same-role prompt entries. |
 
 ### `[vars]`
 
-Named file references. Keys become variable names; values are file paths. Content is read at runtime and injected into prompts via `{{key}}` placeholders when `substitute = true`.
+Named file references. Keys become variable names; values are file paths (scalar or array). Array values are sweep dimensions — each file path produces a separate run. Content is read at runtime and injected into prompts via `{{key}}` placeholders when `substitute = true`.
 
 ### `[[prompts]]`
 
@@ -65,7 +65,7 @@ Ordered list of prompt entries. Entries are assembled into a message sequence ma
 
 ## Matrix sweep
 
-The cartesian product of all array values across `[generation]` and `[[prompts]]`. Example above: 2 models x 3 temperatures x 2 system files = 12 runs.
+The cartesian product of all array values across `[generation]`, `[vars]`, and `[[prompts]]`. Example above: 2 models x 3 max_tokens x 2 inputs x 2 system files = 24 runs.
 
 ## Path resolution
 

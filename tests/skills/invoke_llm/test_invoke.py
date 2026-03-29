@@ -648,6 +648,118 @@ prompt = "Was that correct?"
         self.assertIn("X is Y.", assistant_contents)
         self.assertIn("X is Z.", assistant_contents)
 
+    def test_max_tokens_array_sweep(self):
+        """max_tokens array is a sweep dimension. 3 values → 3 runs."""
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+max_tokens = [256, 512, 1024]
+
+[[prompts]]
+role = "user"
+prompt = "hello"
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 3)
+        token_vals = [run["max_tokens"] for run in matrix]
+        self.assertEqual(sorted(token_vals), [256, 512, 1024])
+
+    def test_max_tokens_array_with_model_sweep(self):
+        """2 models × 2 max_tokens = 4 runs."""
+        path = self._write_toml("run.toml", """\
+[generation]
+model = ["gpt-4o", "claude-sonnet-4-6"]
+max_tokens = [512, 4096]
+
+[[prompts]]
+role = "user"
+prompt = "hello"
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 4)
+
+    def test_max_tokens_scalar_unchanged(self):
+        """Scalar max_tokens still works as before."""
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+max_tokens = 2048
+
+[[prompts]]
+role = "user"
+prompt = "hello"
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 1)
+        self.assertEqual(matrix[0]["max_tokens"], 2048)
+
+    def test_vars_array_sweep(self):
+        """Array var value is a sweep dimension. 2 files → 2 runs."""
+        self._write_file("case1.md", "first case")
+        self._write_file("case2.md", "second case")
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+
+[vars]
+input = ["case1.md", "case2.md"]
+
+[[prompts]]
+role = "user"
+prompt = "Analyze: {{input}}"
+substitute = true
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 2)
+        user_texts = [m.content for run in matrix for m in run["messages"] if m.role == "user"]
+        self.assertIn("Analyze: first case", user_texts)
+        self.assertIn("Analyze: second case", user_texts)
+
+    def test_vars_array_with_model_sweep(self):
+        """2 models × 2 var files = 4 runs."""
+        self._write_file("a.md", "content a")
+        self._write_file("b.md", "content b")
+        path = self._write_toml("run.toml", """\
+[generation]
+model = ["gpt-4o", "claude-sonnet-4-6"]
+
+[vars]
+data = ["a.md", "b.md"]
+
+[[prompts]]
+role = "user"
+prompt = "Process: {{data}}"
+substitute = true
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 4)
+
+    def test_vars_scalar_unchanged(self):
+        """Scalar var still works as before."""
+        self._write_file("input.md", "the content")
+        path = self._write_toml("run.toml", """\
+[generation]
+model = "gpt-4o"
+
+[vars]
+input = "input.md"
+
+[[prompts]]
+role = "user"
+prompt = "Got: {{input}}"
+substitute = true
+""")
+        config = load_config(path)
+        matrix = expand_matrix(config)
+        self.assertEqual(len(matrix), 1)
+        user_text = [m.content for m in matrix[0]["messages"] if m.role == "user"][0]
+        self.assertIn("Got: the content", user_text)
+
     def test_consecutive_same_role_joined(self):
         """Two consecutive user prompts are joined, not left as separate messages."""
         path = self._write_toml("run.toml", """\

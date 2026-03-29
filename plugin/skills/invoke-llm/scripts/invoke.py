@@ -177,7 +177,9 @@ def load_config(path: str) -> dict:
 
     # Resolve file paths in [vars]
     for key, val in config.get("vars", {}).items():
-        if isinstance(val, str):
+        if isinstance(val, list):
+            config["vars"][key] = [str(base_dir / v) for v in val]
+        else:
             config["vars"][key] = str(base_dir / val)
 
     # Resolve [output].file
@@ -207,6 +209,18 @@ def expand_matrix(config: dict) -> list[dict]:
         temps = temp if isinstance(temp, list) else [temp]
         if len(temps) > 1:
             dimensions.append(("temperature", temps))
+
+    # Max tokens
+    mt = gen.get("max_tokens", 4096)
+    max_tokens_list = mt if isinstance(mt, list) else [mt]
+    if len(max_tokens_list) > 1:
+        dimensions.append(("max_tokens", max_tokens_list))
+
+    # Vars sweeps (array file paths)
+    vars_section = config.get("vars", {})
+    for var_name, var_val in vars_section.items():
+        if isinstance(var_val, list) and len(var_val) > 1:
+            dimensions.append((f"var_{var_name}", var_val))
 
     # Prompt sweeps (file arrays and prompt arrays)
     prompts = config.get("prompts", [])
@@ -247,11 +261,15 @@ def _build_run_spec(config: dict, overrides: dict) -> dict:
     if isinstance(temp, list):
         temp = temp[0]
 
-    max_tokens = gen.get("max_tokens", 4096)
+    max_tokens = overrides.get("max_tokens", gen.get("max_tokens", 4096))
+    if isinstance(max_tokens, list):
+        max_tokens = max_tokens[0]
+
+    # Resolve vars with overrides for array var paths
+    vars_content = _load_vars(config, overrides)
 
     # Assemble ordered message list
     raw_messages: list[Message] = []
-    vars_content = _load_vars(config)
 
     for i, prompt in enumerate(config.get("prompts", [])):
         role = prompt["role"]
@@ -288,11 +306,15 @@ def _build_run_spec(config: dict, overrides: dict) -> dict:
     return spec
 
 
-def _load_vars(config: dict) -> dict[str, str]:
-    """Load [vars] file contents."""
+def _load_vars(config: dict, overrides: dict | None = None) -> dict[str, str]:
+    """Load [vars] file contents, applying sweep overrides for array vars."""
+    overrides = overrides or {}
     vars_section = config.get("vars", {})
     result: dict[str, str] = {}
     for key, filepath in vars_section.items():
+        filepath = overrides.get(f"var_{key}", filepath)
+        if isinstance(filepath, list):
+            filepath = filepath[0]
         result[key] = Path(filepath).read_text(encoding="utf-8")
     return result
 
