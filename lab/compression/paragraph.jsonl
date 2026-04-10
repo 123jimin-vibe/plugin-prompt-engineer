@@ -1,0 +1,17 @@
+{"id": 1, "source": "continue-gaki/rules/programming/typescript.md", "file": "para/01-ts-naming.md"}
+{"id": 2, "source": "continue-gaki/rules/programming/typescript.md", "file": "para/02-ts-string-literals.md"}
+{"id": 3, "source": "continue-gaki/rules/programming/typescript.md", "file": "para/03-ts-nill-values.md"}
+{"id": 4, "source": "continue-gaki/rules/~99~meta/on-rules.md", "file": "para/04-on-rules-file-layout.md"}
+{"id": 5, "source": "skai-chat/AGENTS.md", "file": "para/05-skai-chat-conventions.md"}
+{"id": 6, "source": "skai-chat/src/component/common/AGENTS.md", "file": "para/06-skai-chat-common-agents.md"}
+{"id": 7, "source": "bfc/editors/vscode/AGENTS.md", "file": "para/07-bfc-vscode-agents.md"}
+{"id": 9, "source": "canopus/worklog/spec/s0008-logging.md", "file": "para/09-canopus-logging.md"}
+{"id": 10, "source": "canopus/worklog/spec/s0003-input-subsystem.md", "file": "para/10-canopus-event-processing.md"}
+{"id": 11, "source": "plugin-worklog/worklog/spec/s0021-writing-concise.md", "file": "para/11-worklog-writing-principles.md"}
+{"id": 12, "source": "bfc/src/AGENTS.md", "file": "para/12-bfc-src-subdirectories.md"}
+{"id": 13, "source": "canopus/worklog/spec/s0002-application-architecture.md", "file": "para/13-canopus-failure-policy.md"}
+{"id": 14, "source": "plugin-worklog/plugin/skills/worklog/SKILL.md", "file": "para/14-worklog-decision.md"}
+{"id": 16, "source": "bfc/worklog/spec/s0010-optimization.md", "file": "para/16-bfc-value-tracking.md"}
+{"id": 17, "source": "continue-gaki/rules/programming/00-main.md", "file": "para/17-comments-docstrings.md"}
+{"id": 19, "source": "canopus/worklog/spec/s0003-input-subsystem.md", "file": "para/19-canopus-device-registration.md"}
+{"id": 20, "source": "skai-chat/src/global/AGENTS.md", "file": "para/20-skai-chat-global-files.md"}

@@ -1,0 +1,16 @@
+{"id": 1, "source": "plugin-worklog/plugin/skills/worklog/SKILL.md", "file": "doc/01-worklog-skill.md"}
+{"id": 2, "source": "continue-gaki/skills/prompt-engineer/SKILL.md", "file": "doc/02-prompt-engineer-skill.md"}
+{"id": 3, "source": "plugin-prompt-engineer/plugin/skills/invoke-llm/SKILL.md", "file": "doc/03-invoke-llm-skill.md"}
+{"id": 4, "source": "plugin-prompt-engineer/plugin/skills/token-counter/SKILL.md", "file": "doc/04-token-counter-skill.md"}
+{"id": 5, "source": "bfc/AGENTS.md", "file": "doc/05-bfc-agents.md"}
+{"id": 6, "source": "skai-chat/AGENTS.md", "file": "doc/06-skai-chat-agents.md"}
+{"id": 7, "source": "skai-chat/src/chat/AGENTS.md", "file": "doc/07-skai-chat-chat-agents.md"}
+{"id": 8, "source": "canopus/worklog/spec/s0001-canopus-overview.md", "file": "doc/08-canopus-overview.md"}
+{"id": 9, "source": "canopus/worklog/spec/s0002-application-architecture.md", "file": "doc/09-canopus-architecture.md"}
+{"id": 10, "source": "bfc/worklog/spec/s0010-optimization.md", "file": "doc/10-bfc-optimization.md"}
+{"id": 11, "source": "bfc/worklog/spec/s0011-stl.md", "file": "doc/11-bfc-stl.md"}
+{"id": 12, "source": "plugin-worklog/worklog/spec/s0019-agent-pitfalls.md", "file": "doc/12-worklog-agent-pitfalls.md"}
+{"id": 13, "source": "https://code.claude.com/docs/en/plugins-reference", "file": "doc/13-claude-plugins-reference.md"}
+{"id": 14, "source": "https://modelcontextprotocol.io/specification/2025-11-25", "file": "doc/14-mcp-specification.md"}
+{"id": 15, "source": "https://agentskills.io/specification", "file": "doc/15-agent-skills-specification.md"}
+{"id": 16, "source": "https://github.com/odygrd/quill/blob/master/README.md", "file": "doc/16-quill-readme.md"}

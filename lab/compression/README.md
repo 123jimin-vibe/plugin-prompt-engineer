@@ -2,6 +2,11 @@
 
 Prompt compression for non-creative prompts, mainly SKILL.md files and worklog specs.
 
+## Goals
+
+1. Find which techniques are effective for compressing prompts without losing quality.
+2. Find effective instructions for LLMs that would compress prompts (i.e. instructions for the prompt-engineer agent).
+
 ## Data
 
 Test data sorted by length relative to text structure (not absolute token/character counts):
