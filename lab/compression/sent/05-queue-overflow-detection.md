@@ -1,0 +1,1 @@
+SPSC command queue overflow must be detectable so the scene can discard the affected measurement rather than silently producing invalid calibration data.

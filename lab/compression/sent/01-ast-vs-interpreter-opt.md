@@ -1,0 +1,1 @@
+These optimizations are distinct from AST optimization passes, which transform the AST before interpretation. Interpreter optimizations leave the AST unchanged and instead short-circuit execution.

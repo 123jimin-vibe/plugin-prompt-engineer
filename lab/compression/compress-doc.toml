@@ -1,0 +1,38 @@
+# Used with prompt-engineer:invoke-llm skill.
+
+[generation]
+model = "claude-sonnet-4-6"
+temperature = 0.0
+max_tokens = 8192
+
+[vars]
+input = [
+  "doc/01-worklog-skill.md",
+  "doc/02-prompt-engineer-skill.md",
+  "doc/03-invoke-llm-skill.md",
+  "doc/04-token-counter-skill.md",
+  "doc/05-bfc-agents.md",
+  "doc/06-skai-chat-agents.md",
+  "doc/07-skai-chat-chat-agents.md",
+  "doc/08-canopus-overview.md",
+  "doc/09-canopus-architecture.md",
+  "doc/10-bfc-optimization.md",
+  "doc/11-bfc-stl.md",
+  "doc/12-worklog-agent-pitfalls.md",
+  "doc/13-claude-plugins-reference.md",
+  "doc/14-mcp-specification.md",
+  "doc/15-agent-skills-specification.md",
+  "doc/16-quill-readme.md",
+]
+
+[[prompts]]
+role = "system"
+file = "compress.md"
+
+[[prompts]]
+role = "user"
+prompt = "{{input}}"
+substitute = true
+
+[output]
+file = "results/doc.jsonl"

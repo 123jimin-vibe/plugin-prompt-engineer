@@ -1,0 +1,1 @@
+It's important to note that skai-chat does not use tree-based history. For example, retrying response generation in the middle of history only modifies one point of the history, leaving later messages unchanged.

@@ -1,0 +1,1 @@
+Subagent with detailed prompt engineering knowledge. Offloads prompt-related reasoning from the main agent's context window — the main agent delegates prompt tasks without needing prompt engineering principles in its own context.

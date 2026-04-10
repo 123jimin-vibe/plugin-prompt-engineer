@@ -1,0 +1,1 @@
+One important nuance: agents typically only consult skills for tasks that require knowledge or capabilities beyond what they can handle alone.

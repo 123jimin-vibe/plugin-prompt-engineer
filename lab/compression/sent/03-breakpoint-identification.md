@@ -1,0 +1,1 @@
+The current `breakpoint` statement is bare — it fires and dumps raw tape state. When debugging a program with multiple breakpoints, there's no way to tell which one fired or where it is in the source.

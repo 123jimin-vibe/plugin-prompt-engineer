@@ -1,0 +1,1 @@
+The correct answer must follow from an explicit rule with no exception. If a reasonable person could argue the other side, the question fails as a test.

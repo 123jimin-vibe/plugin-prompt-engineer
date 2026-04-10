@@ -1,0 +1,1 @@
+Drift suppresses process compliance — governance checks, verification steps, archival procedures. These are steps the agent must remember to perform; drift pushes them out of active attention.

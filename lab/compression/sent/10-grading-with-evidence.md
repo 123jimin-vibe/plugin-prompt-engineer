@@ -1,0 +1,1 @@
+Grading means evaluating each assertion against the actual outputs and recording PASS or FAIL with specific evidence. The evidence should quote or reference the output, not just state an opinion.

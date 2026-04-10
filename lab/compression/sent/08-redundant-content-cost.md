@@ -1,0 +1,1 @@
+Content restating what the target LLM already knows or can discover from existing sources (docs, code, READMEs) increases reasoning tokens 10–22% without improving outcomes.

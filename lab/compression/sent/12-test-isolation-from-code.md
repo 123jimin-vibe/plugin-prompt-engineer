@@ -1,0 +1,1 @@
+When a separate agent writes tests, it receives the spec as its sole input — not function names, signatures, internal structure, or behavioral enumerations derived from reading the code. The parent agent must not compensate for spec gaps by front-loading implementation knowledge into the prompt.

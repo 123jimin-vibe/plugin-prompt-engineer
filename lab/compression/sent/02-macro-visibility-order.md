@@ -1,0 +1,1 @@
+A macro body can only call macros that were declared before it in the flattened load order (i.e., macros from files it `use`s, or earlier declarations in the same file). This is enforced at expansion time via a visibility snapshot captured at declaration.

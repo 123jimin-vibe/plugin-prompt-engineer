@@ -1,0 +1,1 @@
+The Knowledge Base stores reusable pieces of text that you can reference from your templates — things like character descriptions, world details, or reference material.

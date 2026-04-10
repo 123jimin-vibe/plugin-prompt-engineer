@@ -1,0 +1,1 @@
+The architecture targets less than 0.1ms total software overhead on any latency-critical path (input, audio, rendering), and must not exceed 1ms.

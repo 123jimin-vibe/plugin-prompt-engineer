@@ -1,0 +1,1 @@
+Per-thread SPSC lock-free queues: each logging thread writes to its own thread-local ring buffer with zero contention. The single backend thread polls all queues.

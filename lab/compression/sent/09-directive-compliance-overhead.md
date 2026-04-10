@@ -1,0 +1,1 @@
+Every directive in always-included content competes for the LLM's reasoning budget. Extra instructions produce more tool calls, more file traversal, and more reasoning tokens — making tasks harder, not easier.

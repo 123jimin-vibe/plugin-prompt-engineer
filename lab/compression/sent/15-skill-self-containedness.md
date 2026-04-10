@@ -1,0 +1,1 @@
+SKILL.md is the single context file agents receive when the worklog skill activates. It must be self-contained: an agent follows the methodology from SKILL.md alone, without reading individual specs.

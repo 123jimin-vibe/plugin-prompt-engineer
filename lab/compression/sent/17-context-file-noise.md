@@ -1,0 +1,1 @@
+Context files (AGENTS.md, CLAUDE.md) injected wholesale add noise that agents faithfully obey — empirically shown to reduce success rates by ~3% while increasing cost >20%. Agents follow unnecessary requirements (style guides, architecture overviews) even when they make the task harder.

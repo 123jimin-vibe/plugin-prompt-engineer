@@ -1,0 +1,39 @@
+# Used with prompt-engineer:invoke-llm skill.
+
+[generation]
+model = "claude-sonnet-4-6"
+temperature = 0.0
+max_tokens = 1024
+
+[vars]
+input = [
+  "para/01-ts-naming.md",
+  "para/02-ts-string-literals.md",
+  "para/03-ts-nill-values.md",
+  "para/04-on-rules-file-layout.md",
+  "para/05-skai-chat-conventions.md",
+  "para/06-skai-chat-common-agents.md",
+  "para/07-bfc-vscode-agents.md",
+  "para/09-canopus-logging.md",
+  "para/10-canopus-event-processing.md",
+  "para/11-worklog-writing-principles.md",
+  "para/12-bfc-src-subdirectories.md",
+  "para/13-canopus-failure-policy.md",
+  "para/14-worklog-decision.md",
+  "para/16-bfc-value-tracking.md",
+  "para/17-comments-docstrings.md",
+  "para/19-canopus-device-registration.md",
+  "para/20-skai-chat-global-files.md",
+]
+
+[[prompts]]
+role = "system"
+file = "compress.md"
+
+[[prompts]]
+role = "user"
+prompt = "{{input}}"
+substitute = true
+
+[output]
+file = "results/para.jsonl"
