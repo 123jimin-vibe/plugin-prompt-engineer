@@ -22,6 +22,10 @@ Plugin manifest lives at `.claude-plugin/plugin.json` (name, description, versio
 
 - **exams** — see [s0007](infra/s0007-exams.md).
 
+## Agents
+
+- **prompt-engineer** — see [s0010](s0010-prompt-engineer-agent.md).
+
 ## Conventions
 
 - Skill scripts are written in Python (see [d0001](../decision/d0001-python-for-plugin-scripts.md)).
