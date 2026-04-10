@@ -57,17 +57,23 @@ Sub-patterns observed:
 
 **Proposed instruction:** "Qualifiers (typically, optionally, approximately), negative constraints (not X, never Y), conditional logic (if/otherwise/unless), and boundary conditions (only when, except if) carry meaning. Do not remove them unless provably implied by the remaining text. Do not infer a positive claim from a negation. Prefer original terms over synonyms unless strictly equivalent and shorter."
 
+**Test result (GPT-5.4):** 6.6% / 2.9% reduction (vs 8.5% / 2.1% baseline). 24/37 clean, 5 drift, 7 minor. **Rejected.** The instruction made the model more conservative overall without selectively protecting the right words — sent-10 "just", sent-13 "correctly", sent-17 "wholesale"/"faithfully" were all dropped, exactly the patterns H1 targeted. Compresses less than baseline with more errors.
+
 ### H2: Preserve semantic anchors and causal mechanisms
 
 Terms like "false-belief task" (sent-13), "implicit frame" (para-16), and "three abstraction levels" (para-7) are semantic anchors — they carry disproportionate meaning per token. Causal clauses like "add noise that agents faithfully obey" (sent-17) and "acting as an implicit frame" (para-16) explain *why*, not just *what*. The compressor drops both when nearby words seem to convey the gist.
 
 **Proposed instruction:** "Domain-specific terms, named concepts, technical labels, and causal/mechanistic clauses ('which', 'by', 'because', 'acting as') are high-density content. Preserve them even if surrounding words seem to cover the meaning."
 
+**Test result (GPT-5.4):** 8.0% / 1.0% reduction (vs 8.5% / 2.1% baseline). 24/37 clean, 13 drift. **Rejected.** Protected technical vocabulary (no jargon lost) but failed on qualifier drops, synonym substitution, and punctuation-induced ambiguity. Worst quality at near-zero compression. 35% drift rate.
+
 ### H3: Preserve scope metadata
 
 Lines like "Conventions for a TypeScript SPA (Preact + Redux Toolkit + MUI)" (para-5) and "AGENTS.md for `src/component/common/`" (para-6) look editorial but establish applicability. Dropping them makes the content float without context.
 
 **Proposed instruction:** "Path references, file scopes, and applicability declarations ('for X', 'in Y') constrain where the content applies. Preserve them unless duplicated elsewhere."
+
+**Test result (GPT-5.4):** 8.9% / 2.2% reduction (vs 8.5% / 2.1% baseline). 33/37 clean, 4 drift. **Mixed.** Lowest drift rate (11%) but negligible compression gain over baseline. Prevented most scope metadata loss but still dropped "Subsystem" in para-13 — the same error from the Sonnet baseline. The instruction works for quality but doesn't justify its cost if compression is also a goal.
 
 ### H4: Structural rewriting over word-level trimming
 
@@ -95,3 +101,5 @@ The compressor defaults to word-level edits: synonym substitution, article remov
 The current system prompt (`compress.md`) is 4 lines of abstract rules with no examples. A few before/after pairs would anchor the model's compression style, preventing both the under-compression (word-swaps) and over-compression (dropping qualifiers) observed.
 
 **Proposed addition:** Include 2–3 few-shot examples demonstrating structural rewriting, symbol use, and qualifier preservation.
+
+**Test result (GPT-5.4):** 15.3% / 5.5% reduction (vs 8.5% / 2.1% baseline). 27/37 clean, 9 minor, 1 meaningful drift. **Validated.** Nearly 2× baseline compression with only 1 real error (para-07: lost abbreviation definitions). Few-shot examples taught structural compression strategies (inline notation, paragraph merging) that rules-based instructions failed to elicit. Minor flags are mostly near-synonym substitution — the same pattern as other hypotheses but at much higher compression. Dominates the compression/quality tradeoff.
