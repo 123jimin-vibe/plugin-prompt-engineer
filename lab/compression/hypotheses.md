@@ -73,15 +73,22 @@ Lines like "Conventions for a TypeScript SPA (Preact + Redux Toolkit + MUI)" (pa
 
 The compressor defaults to word-level edits: synonym substitution, article removal, passive ↔ active voice. This yields near-zero compression on already-dense text. Real gains come from restructuring: merging clauses, changing sentence topology, converting prose to compact notation, and using symbols.
 
-**Example (sent-1):**
-- Current: "These optimizations differ from AST optimization passes, which transform the AST before interpretation; interpreter optimizations leave the AST unchanged and short-circuit execution instead." (nearly identical to original)
-- Better: "Unlike AST passes that transform before interpretation, interpreter optimizations leave the AST unchanged and short-circuit execution."
+**Experiment (h4-constructs.md):** Token counts (o200k_base) for original → current compressed → proposed structural rewrite:
 
-**Example (para-1, ts-naming):**
-- Current: 3 verbose bullet points
-- Better: `snake_case` vars/attrs/args · `camelCase` functions · `PascalCase` classes/interfaces/types
+| Construct | Technique | Orig | Comp | Rewrite | Verdict |
+|-----------|-----------|------|------|---------|---------|
+| C1 (para-1) | Bullet list → inline `·` | 41 | 42 | **27** (−34%) | Clear win |
+| C2 (sent-1) | Sentence restructure | 31 | 30 | **21** (−32%) | Clear win |
+| C3 (para-20) | File list → markdown table | 249 | 243 | 246 (−1%) | **No savings** — table syntax is token-heavy |
+| C4 (para-13) | Two paragraphs → merged | 83 | 67 | **57** (−31%) | Win over already-decent compression |
+| C5 (sent-5) | Passive voice swap | 24 | 22 | 23 | **Wash** — confirms voice changes are useless |
+| C6 (para-16) | Dense paragraph restructure | 105 | 89 | **76** (−28%) | Win |
 
-**Proposed instruction:** "When word-level trimming yields <10% reduction, restructure: merge sentences sharing the same subject or conclusion, eliminate repeated subjects, factor out common list patterns, and use compact formats — tables, semicolon-lists, `→` for mappings, `·` or `|` for inline alternatives. Compress paragraphs as a unit, not sentence-by-sentence."
+**Validated techniques:** inline notation (`·`, `|`), sentence restructuring (eliminate repeated subjects), paragraph merging, terse colon-style rephrasing.
+
+**Invalidated:** markdown tables (token-expensive syntax), passive ↔ active voice swaps, synonym substitution.
+
+**Proposed instruction:** "When word-level trimming yields <10% reduction, restructure: merge sentences sharing the same subject or conclusion, eliminate repeated subjects, factor out common list patterns, and use compact formats — semicolon-lists, `→` for mappings, `·` or `|` for inline alternatives, colon-style headers. Do not convert to markdown tables. Do not swap passive/active voice. Compress paragraphs as a unit, not sentence-by-sentence."
 
 ### H5: Add few-shot examples for calibration
 

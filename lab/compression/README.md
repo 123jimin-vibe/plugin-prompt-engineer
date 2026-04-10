@@ -16,3 +16,8 @@ Test data sorted by length relative to text structure (not absolute token/charac
 - **Document-level**
 
 Each data item must be self-contained. Minor modification from raw data is permitted but should be kept minimal.
+
+## Analysis
+
+- [hypotheses.md](hypotheses.md) — compression improvement hypotheses
+- [findings.md](findings.md) — experiment results
