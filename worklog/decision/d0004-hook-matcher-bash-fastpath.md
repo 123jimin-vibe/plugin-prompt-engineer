@@ -1,7 +1,6 @@
 +++
 id = "d0004"
 title = "Hook matcher matches tool name only; use bash fast-path"
-status = "accepted"
 relates_to = ["s0002", "s0003", "s0006"]
 supersedes = ["d0003"]
 +++

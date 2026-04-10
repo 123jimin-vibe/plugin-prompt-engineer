@@ -1,7 +1,6 @@
 +++
 id = "d0001"
 title = "Use Python for plugin scripts"
-status = "accepted"
 relates_to = ["s0001", "s0002"]
 supersedes = []
 +++

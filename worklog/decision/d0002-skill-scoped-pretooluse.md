@@ -1,7 +1,6 @@
 +++
 id = "d0002"
 title = "Keep PreToolUse hook skill-scoped, not plugin-level"
-status = "accepted"
 relates_to = ["s0002", "s0003"]
 supersedes = []
 +++

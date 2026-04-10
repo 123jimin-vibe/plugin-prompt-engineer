@@ -1,7 +1,6 @@
 +++
 id = "d0003"
 title = "Move PreToolUse hooks to hooks.json"
-status = "accepted"
 relates_to = ["s0002", "s0003"]
 supersedes = ["d0002"]
 +++
