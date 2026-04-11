@@ -45,11 +45,13 @@ Items where the output is nearly identical to the input.
 
 ## Hypotheses
 
-### H6: Few-shot examples with drift teach drift
+### H6: Few-shot examples with drift teach drift — REFUTED
 
 The H5 examples themselves contain meaning drift. Example 1 compresses "`camelCase` — functions (including function-typed variables)" to "`camelCase` functions", dropping that function-typed variables also use camelCase — a reader would default them to `snake_case` (the variable convention). The model learns from the examples that this level of information loss is acceptable compression, setting a quality ceiling at the example's own quality.
 
 **Prediction:** Replacing drifted examples with drift-free examples will reduce the model's drift rate without needing additional rules.
+
+**Result:** Refuted. Drift-free examples reduced compression (5.0%/5.2% vs 8.0%/6.7%) without reducing drift (1 → 1, same item). Minor issues increased (9 → 12). The drifted portions of the examples were entangled with the aggressive compression they demonstrated; removing drift also removed the compression signal. See F3.
 
 ### H7: Explicit compression target
 

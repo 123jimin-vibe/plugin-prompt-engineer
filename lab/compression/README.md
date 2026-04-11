@@ -17,6 +17,8 @@ Test data sorted by length relative to text structure (not absolute token/charac
 
 Each data item must be self-contained. Minor modification from raw data is permitted but should be kept minimal.
 
+Do not use the `doc` dataset unless explicitly requested — experiments on it are slow to execute.
+
 ## Analysis
 
 - [hypotheses.md](hypotheses.md) — compression improvement hypotheses

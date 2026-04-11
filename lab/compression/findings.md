@@ -71,3 +71,39 @@ Each compressed output reviewed against its original for semantic loss, added in
 **Why few-shot works better than rules:** Rules tell the model what to preserve but not *how* to compress. The model defaults to word-level edits (synonym swaps, article removal) which yield near-zero compression on already-dense text. Few-shot examples demonstrate structural techniques (inline notation, sentence restructuring, paragraph merging) that unlock real compression — the model learns the *strategy*, not just the constraints. This aligns with F1's finding that structural rewriting outperforms word-level trimming.
 
 **GPT-5.4 vs Sonnet 4.6 as compressor:** GPT-5.4 is substantially more conservative than Sonnet 4.6 at baseline (8.5% vs 18.2% sent, 2.1% vs 11.5% para). This is a model-level difference, not an instruction effect. The Sonnet baseline's higher compression came with more errors (16 catalogued in hypotheses.md). GPT-5.4 + H5 (15.3% / 5.5%) approaches Sonnet's compression level with fewer serious errors.
+
+## F3: Drift-free examples reduce compression without reducing drift (H6)
+
+GPT-5.4, temp 0, `compress-h6.md` (same as `compress.md` but with all example drifts corrected). Tested on 20 sentence + 17 paragraph items.
+
+### Token reduction (o200k_base)
+
+| Variant | Sent tokens | Sent reduction | Para tokens | Para reduction |
+|---------|-------------|----------------|-------------|----------------|
+| Original | 740 | — | 2713 | — |
+| H5 (v2 run) | 681 | 8.0% | 2531 | 6.7% |
+| **H6 (drift-free examples)** | **703** | **5.0%** | **2573** | **5.2%** |
+
+### Meaning drift
+
+| Variant | Clean | Minor | Drift | Issue rate |
+|---------|-------|-------|-------|------------|
+| H5 (v2 run)* | 27 | 9 | 1 | 27% |
+| **H6** | **24** | **12** | **1** | **35%** |
+
+*H5 drift counts from F2 analysis; v2 token counts from re-run on current `compress.md`.
+
+H6's single drift is **para-07** — dropped BF/BSM/BFC acronym definitions. Same item and same error as H5.
+
+### Analysis
+
+**H6 is not supported.** Fixing the drifted examples did not reduce drift and made compression worse.
+
+The drifted H5 examples served two functions simultaneously: teaching **compression strategy** (structural rewriting techniques) and setting an **aggression level** (how much to remove). Correcting the drifts preserved the strategy signal but removed the aggression signal. Example 2's output became nearly identical to its input; Example 3 preserved almost every word. The model learned that the acceptable compression ceiling is "keep almost all the words, rearrange slightly."
+
+Consequences:
+- **Less compression** (5.0%/5.2% vs 8.0%/6.7%) — the examples no longer demonstrated bold restructuring.
+- **More minor issues** (12 vs 9) — with less structural headroom, the model fell back on word-level tweaks (synonym swaps, article drops) that the prompt explicitly prohibits.
+- **Same drift** (para-07) — this error is a structural blind spot (dropping an introductory context paragraph), unrelated to the example-level drifts that were corrected.
+
+**Implication for future example design:** Few-shot examples must be both drift-free AND aggressively compressed — a harder constraint than H6 assumed. Simply fixing drifts in existing examples does not work because the compression and the drift are entangled in the same edits.
