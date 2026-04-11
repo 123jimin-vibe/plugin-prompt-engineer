@@ -45,61 +45,38 @@ Items where the output is nearly identical to the input.
 
 ## Hypotheses
 
-### H1: Preserve word-level precision
+### H6: Few-shot examples with drift teach drift
 
-The compressor makes small word-level changes that alter meaning: deleting qualifiers, swapping near-synonyms, inferring positive claims from negations. These look like compression but are meaning drift.
+The H5 examples themselves contain meaning drift. Example 1 compresses "`camelCase` — functions (including function-typed variables)" to "`camelCase` functions", dropping that function-typed variables also use camelCase — a reader would default them to `snake_case` (the variable convention). The model learns from the examples that this level of information loss is acceptable compression, setting a quality ceiling at the example's own quality.
 
-Sub-patterns observed:
-- **Qualifier deletion** (sent-11): "typically" → absolute "only."
-- **Negation-to-positive inference** (sent-19): "does not use tree-based" → "uses linear" — an interpretation, not a compression.
-- **Conditional flattening** (para-13): "if available, otherwise" → flat list, losing fallback priority.
-- **Synonym substitution** (sent-17): "unnecessary" → "irrelevant." (para-17): "documentation-appropriate" → "full." (sent-20): "knowledge" → "tasks."
+**Prediction:** Replacing drifted examples with drift-free examples will reduce the model's drift rate without needing additional rules.
 
-**Proposed instruction:** "Qualifiers (typically, optionally, approximately), negative constraints (not X, never Y), conditional logic (if/otherwise/unless), and boundary conditions (only when, except if) carry meaning. Do not remove them unless provably implied by the remaining text. Do not infer a positive claim from a negation. Prefer original terms over synonyms unless strictly equivalent and shorter."
+### H7: Explicit compression target
 
-**Test result (GPT-5.4):** 6.6% / 2.9% reduction (vs 8.5% / 2.1% baseline). 24/37 clean, 5 drift, 7 minor. **Rejected.** The instruction made the model more conservative overall without selectively protecting the right words — sent-10 "just", sent-13 "correctly", sent-17 "wholesale"/"faithfully" were all dropped, exactly the patterns H1 targeted. Compresses less than baseline with more errors.
+The current prompt says "compress" open-endedly. GPT-5.4 plays it safe (8.5% baseline). Specifying a target ratio (e.g. "reduce by 30-50%") might push the model past its conservative default without needing structural instructions.
 
-### H2: Preserve semantic anchors and causal mechanisms
+**Prediction:** Adding a numeric compression target will increase compression ratio without proportionally increasing drift.
 
-Terms like "false-belief task" (sent-13), "implicit frame" (para-16), and "three abstraction levels" (para-7) are semantic anchors — they carry disproportionate meaning per token. Causal clauses like "add noise that agents faithfully obey" (sent-17) and "acting as an implicit frame" (para-16) explain *why*, not just *what*. The compressor drops both when nearby words seem to convey the gist.
+### H8: Negative examples
 
-**Proposed instruction:** "Domain-specific terms, named concepts, technical labels, and causal/mechanistic clauses ('which', 'by', 'because', 'acting as') are high-density content. Preserve them even if surrounding words seem to cover the meaning."
+H5 showed positive examples teach strategy. Negative examples (a bad compression paired with its correction) might teach quality boundaries — specifically the intro-line deletion and qualifier-drop blind spots that persist across all runs.
 
-**Test result (GPT-5.4):** 8.0% / 1.0% reduction (vs 8.5% / 2.1% baseline). 24/37 clean, 13 drift. **Rejected.** Protected technical vocabulary (no jargon lost) but failed on qualifier drops, synonym substitution, and punctuation-induced ambiguity. Worst quality at near-zero compression. 35% drift rate.
+**Prediction:** Including 1-2 negative examples ("bad → corrected") will reduce drift on the specific error patterns demonstrated, more effectively than rules (H1-H3) did.
 
-### H3: Preserve scope metadata
+### H9: Model selection
 
-Lines like "Conventions for a TypeScript SPA (Preact + Redux Toolkit + MUI)" (para-5) and "AGENTS.md for `src/component/common/`" (para-6) look editorial but establish applicability. Dropping them makes the content float without context.
+Sonnet 4.6 compressed 2-5× more aggressively than GPT-5.4 at baseline (18.2% vs 8.5% sent, 11.5% vs 2.1% para). The Sonnet baseline was never drift-analyzed with the same rigor as the GPT-5.4 runs. If Sonnet's higher compression comes with acceptable drift, model choice may matter more than prompt engineering.
 
-**Proposed instruction:** "Path references, file scopes, and applicability declarations ('for X', 'in Y') constrain where the content applies. Preserve them unless duplicated elsewhere."
+**Prediction:** Drift analysis of the Sonnet baseline will show a better compression/quality tradeoff than GPT-5.4 + prompt engineering achieved.
 
-**Test result (GPT-5.4):** 8.9% / 2.2% reduction (vs 8.5% / 2.1% baseline). 33/37 clean, 4 drift. **Mixed.** Lowest drift rate (11%) but negligible compression gain over baseline. Prevented most scope metadata loss but still dropped "Subsystem" in para-13 — the same error from the Sonnet baseline. The instruction works for quality but doesn't justify its cost if compression is also a goal.
+### H10: Multi-pass compression
 
-### H4: Structural rewriting over word-level trimming
+First pass restructures, second pass catches remaining verbosity. The model might compress further when the text is already partially compressed — less "this looks important, don't touch it" hesitation on already-rewritten text.
 
-The compressor defaults to word-level edits: synonym substitution, article removal, passive ↔ active voice. This yields near-zero compression on already-dense text. Real gains come from restructuring: merging clauses, changing sentence topology, converting prose to compact notation, and using symbols.
+**Prediction:** A second compression pass on already-compressed output will yield additional 5-15% reduction with minimal new drift.
 
-**Experiment (h4-constructs.md):** Token counts (o200k_base) for original → current compressed → proposed structural rewrite:
+### H11: Strip markdown scaffolding
 
-| Construct | Technique | Orig | Comp | Rewrite | Verdict |
-|-----------|-----------|------|------|---------|---------|
-| C1 (para-1) | Bullet list → inline `·` | 41 | 42 | **27** (−34%) | Clear win |
-| C2 (sent-1) | Sentence restructure | 31 | 30 | **21** (−32%) | Clear win |
-| C3 (para-20) | File list → markdown table | 249 | 243 | 246 (−1%) | **No savings** — table syntax is token-heavy |
-| C4 (para-13) | Two paragraphs → merged | 83 | 67 | **57** (−31%) | Win over already-decent compression |
-| C5 (sent-5) | Passive voice swap | 24 | 22 | 23 | **Wash** — confirms voice changes are useless |
-| C6 (para-16) | Dense paragraph restructure | 105 | 89 | **76** (−28%) | Win |
+Headers (`##`), bold (`**`), bullet prefixes (`- `), blank lines between sections — all cost tokens. Replacing them with lighter delimiters (colons, newlines) might yield compression that the model doesn't attempt because it treats formatting as immutable.
 
-**Validated techniques:** inline notation (`·`, `|`), sentence restructuring (eliminate repeated subjects), paragraph merging, terse colon-style rephrasing.
-
-**Invalidated:** markdown tables (token-expensive syntax), passive ↔ active voice swaps, synonym substitution.
-
-**Proposed instruction:** "When word-level trimming yields <10% reduction, restructure: merge sentences sharing the same subject or conclusion, eliminate repeated subjects, factor out common list patterns, and use compact formats — semicolon-lists, `→` for mappings, `·` or `|` for inline alternatives, colon-style headers. Do not convert to markdown tables. Do not swap passive/active voice. Compress paragraphs as a unit, not sentence-by-sentence."
-
-### H5: Add few-shot examples for calibration
-
-The current system prompt (`compress.md`) is 4 lines of abstract rules with no examples. A few before/after pairs would anchor the model's compression style, preventing both the under-compression (word-swaps) and over-compression (dropping qualifiers) observed.
-
-**Proposed addition:** Include 2–3 few-shot examples demonstrating structural rewriting, symbol use, and qualifier preservation.
-
-**Test result (GPT-5.4):** 15.3% / 5.5% reduction (vs 8.5% / 2.1% baseline). 27/37 clean, 9 minor, 1 meaningful drift. **Validated.** Nearly 2× baseline compression with only 1 real error (para-07: lost abbreviation definitions). Few-shot examples taught structural compression strategies (inline notation, paragraph merging) that rules-based instructions failed to elicit. Minor flags are mostly near-synonym substitution — the same pattern as other hypotheses but at much higher compression. Dominates the compression/quality tradeoff.
+**Prediction:** Explicitly instructing the model to replace markdown formatting with lighter alternatives will yield measurable token savings on paragraph-level and document-level items where scaffolding is a larger share of total tokens.
