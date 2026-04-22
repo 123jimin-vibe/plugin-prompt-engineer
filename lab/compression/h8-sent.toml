@@ -1,0 +1,42 @@
+# H8: negative examples (bad → corrected)
+
+[generation]
+model = "gpt-5.4"
+temperature = 0.0
+max_tokens = 256
+
+[vars]
+input = [
+  "sent/01-ast-vs-interpreter-opt.md",
+  "sent/02-macro-visibility-order.md",
+  "sent/03-breakpoint-identification.md",
+  "sent/04-latency-target.md",
+  "sent/05-queue-overflow-detection.md",
+  "sent/06-per-thread-spsc-queues.md",
+  "sent/07-failure-clean-shutdown.md",
+  "sent/08-redundant-content-cost.md",
+  "sent/09-directive-compliance-overhead.md",
+  "sent/10-grading-with-evidence.md",
+  "sent/11-skill-consultation-threshold.md",
+  "sent/12-test-isolation-from-code.md",
+  "sent/13-spec-prediction-false-belief.md",
+  "sent/14-irrefutable-test-answers.md",
+  "sent/15-skill-self-containedness.md",
+  "sent/16-drift-suppresses-compliance.md",
+  "sent/17-context-file-noise.md",
+  "sent/18-knowledge-base-description.md",
+  "sent/19-linear-history-model.md",
+  "sent/20-prompt-engineering-subagent.md",
+]
+
+[[prompts]]
+role = "system"
+file = "compress-h8.md"
+
+[[prompts]]
+role = "user"
+prompt = "{{input}}"
+substitute = true
+
+[output]
+file = "results/h8-sent.jsonl"

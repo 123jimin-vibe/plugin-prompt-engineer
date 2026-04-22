@@ -63,11 +63,13 @@ The current prompt says "compress" open-endedly. GPT-5.4 plays it safe (8.5% bas
 
 **Result:** Refuted. Sent +0.4pp (negligible), para -1.0pp (worse). The model ignored the numeric target entirely — few-shot examples remain the dominant compression signal. See F4.
 
-### H8: Negative examples
+### H8: Negative examples — REFUTED
 
 H5 showed positive examples teach strategy. Negative examples (a bad compression paired with its correction) might teach quality boundaries — specifically the intro-line deletion and qualifier-drop blind spots that persist across all runs.
 
 **Prediction:** Including 1-2 negative examples ("bad → corrected") will reduce drift on the specific error patterns demonstrated, more effectively than rules (H1-H3) did.
+
+**Result:** Refuted. Targeted items (sent-08, sent-11) were already clean in the v3 baseline. Negative examples reduced compression (-0.4pp/-1.3pp) and introduced 2 new drifts (sent-17, para-13) that v3 didn't have. Negative examples function like rules — they make the model globally conservative without selectively preventing targeted errors. See F7.
 
 ### H9: Model selection
 

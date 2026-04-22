@@ -221,3 +221,38 @@ This example compresses only 15% — but its purpose is not to set aggression (t
 1. **The 4th example teaches a PATTERN, not a constraint.** Rules say "don't do X" but don't show alternatives. The example shows what TO DO with an intro paragraph — compress it structurally, keep it in place. This is consistent with F2's finding that examples teach strategy while rules don't.
 2. **It doesn't dilute the aggression signal.** The original 3 examples (averaging ~34% compression) still set the aggression level. The 4th example targets a specific blind spot without interfering with the compression strategy.
 3. **It uses non-test data.** The example comes from doc/08, not from the sent/para test sets, avoiding overfitting to specific test items while teaching a generalizable pattern.
+
+## F7: Negative examples (H8)
+
+GPT-5.4, temp 0, `compress-h8.md` (v3 prompt + 2 negative examples showing bad compressions with corrections). Tested on 20 sentence + 17 paragraph items.
+
+Negative examples targeted two persistent error patterns:
+1. **Qualifier drop** (from sent-11): "typically" dropped, "knowledge or capabilities" → "capabilities."
+2. **Specificity collapse** (from sent-08): "already knows or can discover" → "can already access."
+
+### Token reduction (o200k_base)
+
+| Variant | Sent tokens | Sent reduction | Para tokens | Para reduction |
+|---------|-------------|----------------|-------------|----------------|
+| Original | 740 | — | 2713 | — |
+| v3 | 688 | 7.0% | 2585 | 4.7% |
+| **H8 (negative examples)** | **691** | **6.6%** | **2622** | **3.4%** |
+
+### Meaning drift
+
+| Variant | Clean | Minor | Drift | Issue rate |
+|---------|-------|-------|-------|------------|
+| v3 | 28 | 9 | 0 | 24% |
+| **H8** | **26** | **9** | **2** | **30%** |
+
+H8 drifts: **sent-17** (dropped "that" from "noise that agents faithfully obey," breaking the relative clause that encodes the causal mechanism) and **para-13** ("All failures → clean exit" framing collapsed the two-tier distinction between init and runtime failure handling). Both were CLEAN in v3.
+
+### Analysis
+
+**H8 is not supported.** Negative examples reduced compression (-0.4pp sent, -1.3pp para vs v3) and increased drift (0 → 2). The targeted items (sent-08, sent-11) were already CLEAN in v3 — the negative examples solved a problem that the v3 prompt had already fixed through other means.
+
+The negative examples had two unintended effects:
+1. **Overall conservatism.** Para-11 (+20 tokens) and para-16 (+18 tokens) grew substantially. The model treated the "avoid these errors" section as a general caution signal, not a targeted correction for specific patterns.
+2. **Attention displacement.** New drifts appeared on sent-17 and para-13 — items that were CLEAN in v3. The added prompt weight (~228 tokens of negative examples) may have pushed other quality-relevant context out of the model's effective attention window.
+
+**Negative examples function like rules, not like positive examples.** F2 established that rules make GPT-5.4 more conservative without selectively preventing their targeted errors. Negative examples follow the same pattern — they constrain behavior globally rather than teaching specific alternatives. The "bad → corrected" format does not override this: the model still reads them as constraints, not demonstrations of strategy.
