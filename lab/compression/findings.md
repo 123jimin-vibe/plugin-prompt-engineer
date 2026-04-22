@@ -107,3 +107,117 @@ Consequences:
 - **Same drift** (para-07) — this error is a structural blind spot (dropping an introductory context paragraph), unrelated to the example-level drifts that were corrected.
 
 **Implication for future example design:** Few-shot examples must be both drift-free AND aggressively compressed — a harder constraint than H6 assumed. Simply fixing drifts in existing examples does not work because the compression and the drift are entangled in the same edits.
+
+## F4: Explicit compression target (H7)
+
+GPT-5.4, temp 0, `compress-h7.md` (same as `compress.md` but with "Target 30-50% token reduction" added to the first line). Tested on 20 sentence + 17 paragraph items.
+
+### Token reduction (o200k_base)
+
+| Variant | Sent tokens | Sent reduction | Para tokens | Para reduction |
+|---------|-------------|----------------|-------------|----------------|
+| Original | 740 | — | 2713 | — |
+| H5 (v2 run) | 681 | 8.0% | 2531 | 6.7% |
+| **H7 (30-50% target)** | **678** | **8.4%** | **2558** | **5.7%** |
+
+### Meaning drift
+
+| Variant | Clean | Minor | Drift | Issue rate |
+|---------|-------|-------|-------|------------|
+| H5 (v2 run) | 27 | 9 | 1 | 27% |
+| **H7** | **26** | **10** | **1** | **30%** |
+
+H7's single drift is **para-07** — dropped BF/BSM/BFC acronym definitions. Same item and same error as H5.
+
+### Analysis
+
+**H7 is not supported.** The explicit 30-50% compression target had negligible effect on sentence-level compression (+0.4pp) and actually reduced paragraph-level compression (-1.0pp). Drift profile is comparable to H5.
+
+The model ignored the numeric target. GPT-5.4 at temp 0 produces the same conservative output regardless of whether the prompt says "compress" or "compress by 30-50%." The few-shot examples remain the dominant signal — the model compresses to the level demonstrated by the examples, not to the level stated in the instructions. This is consistent with F2's finding that rules (instructions) are weaker than demonstrations (examples).
+
+## F5: Strip markdown scaffolding (H11)
+
+GPT-5.4, temp 0, `compress-h11.md` (same as `compress.md` but with instruction to replace markdown formatting with lighter delimiters). Tested on 20 sentence + 17 paragraph items. Doc-level items excluded per lab policy.
+
+### Token reduction (o200k_base)
+
+| Variant | Sent tokens | Sent reduction | Para tokens | Para reduction |
+|---------|-------------|----------------|-------------|----------------|
+| Original | 740 | — | 2713 | — |
+| H5 (v2 run) | 681 | 8.0% | 2531 | 6.7% |
+| **H11 (strip scaffolding)** | **692** | **6.5%** | **2536** | **6.5%** |
+
+### Meaning drift
+
+| Variant | Clean | Minor | Drift | Issue rate |
+|---------|-------|-------|-------|------------|
+| H5 (v2 run) | 27 | 9 | 1 | 27% |
+| **H11** | **25** | **11** | **1** | **32%** |
+
+H11's single drift is **para-07** — dropped BF/BSM/BFC acronym definitions (though BSM was partially preserved). Same core error as H5.
+
+### Analysis
+
+**H11 is not supported at aggregate level.** Net compression is near-identical to H5 at paragraph level (-0.2pp) and worse at sentence level (-1.5pp). Sentence-level items have almost no markdown scaffolding to strip, so the instruction adds prompt weight without a target.
+
+Item-level results are mixed. Some items saved tokens by stripping bold markers and section breaks: para-11 (-14), para-16 (-10), para-05 (-6), para-20 (-6), para-07 (-5). But para-12 grew by +37 tokens — because H11 **preserved** the BFC/BSM introductory context that H5 silently dropped. The scaffolding instruction may have made the model view document structure as something to reformat rather than strip, indirectly protecting intro context that other variants discard.
+
+**Net assessment:** The scaffolding instruction redistributes tokens (stripping formatting, preserving content) rather than reducing them overall. On items where formatting is a large share of total tokens, savings are real but offset by the model being more conservative elsewhere.
+
+## F6: Targeted few-shot example for intro preservation (compress.md v3)
+
+### Background
+
+The para-07 blind spot (dropping introductory context paragraphs) persisted across all tested variants: H1–H3, H5, H6, H7, H11. Two prior attempts to fix it failed:
+
+- **v3 attempt 1** (F3 approach extended): replaced all three examples with drift-free versions. Compression dropped to 3.4%/3.9% and drift increased to 2 items. Root cause: the current example source items (para-01, sent-01, para-13) lack structural redundancy — aggressive compression on them requires dropping information. Making examples drift-free inherently reduces aggression because the drift IS the compression.
+- **Rule-based approach** ("Do not drop introductory context"): included in v3 attempt 1 alongside drift-free examples. para-12 preserved its intro, but para-07 did not. Consistent with F2's finding that rules are weaker than examples.
+
+### Design
+
+Rather than replacing the existing (aggressive, slightly drifted) examples, a **4th example** was added from non-test data (doc/08-canopus-overview.md) demonstrating that introductory context should be compressed, not dropped:
+
+```
+Input:
+Canopus is a calibration and training desktop application for rhythm game players.
+It runs as a full-screen or windowed application with multiple navigable scenes.
+
+### Scenes
+
+Scene list is not closed/fixed.
+
+Output:
+Canopus: calibration/training desktop app for rhythm game players · full-screen
+or windowed, multiple navigable scenes.
+### Scenes
+Scene list is not closed/fixed.
+```
+
+This example compresses only 15% — but its purpose is not to set aggression (the other 3 examples do that). It teaches a specific structural pattern: intro paragraph before a heading → compress it, keep it.
+
+### Token reduction (o200k_base)
+
+| Variant | Sent tokens | Sent reduction | Para tokens | Para reduction |
+|---------|-------------|----------------|-------------|----------------|
+| Original | 740 | — | 2713 | — |
+| v2 (H5) | 681 | 8.0% | 2531 | 6.7% |
+| **v3** | **688** | **7.0%** | **2585** | **4.7%** |
+
+### Meaning drift
+
+| Variant | Clean | Minor | Drift | Issue rate |
+|---------|-------|-------|-------|------------|
+| v2 (H5) | 27 | 9 | 1 | 27% |
+| **v3** | **28** | **9** | **0** | **24%** |
+
+### Analysis
+
+**v3 eliminates all drift.** The persistent para-07 blind spot is fixed — BF/BSM/BFC acronym definitions are preserved in full. Para-12's intro context is also preserved. All 12 watchlist items passed (sent-07, 08, 10, 11, 13, 17, para-05, 07, 09, 12, 13, 17).
+
+**Compression decrease is almost entirely quality improvement.** Para-07 (+36 tokens) and para-12 (+37 tokens) account for +73 of the +54 total para token increase. These items gained tokens because the model preserved content that v2 incorrectly dropped. Excluding those two items, v3 compresses non-intro items slightly better than v2 (1982 vs 2001 tokens). Sentence-level compression decreased by 1.0pp (7.0% vs 8.0%), within normal variance.
+
+**Why this worked when other approaches failed:**
+
+1. **The 4th example teaches a PATTERN, not a constraint.** Rules say "don't do X" but don't show alternatives. The example shows what TO DO with an intro paragraph — compress it structurally, keep it in place. This is consistent with F2's finding that examples teach strategy while rules don't.
+2. **It doesn't dilute the aggression signal.** The original 3 examples (averaging ~34% compression) still set the aggression level. The 4th example targets a specific blind spot without interfering with the compression strategy.
+3. **It uses non-test data.** The example comes from doc/08, not from the sent/para test sets, avoiding overfitting to specific test items while teaching a generalizable pattern.

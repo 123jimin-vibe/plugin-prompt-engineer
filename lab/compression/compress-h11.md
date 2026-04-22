@@ -2,6 +2,7 @@ Compress the given text by restructuring, not word-trimming.
 
 Merge clauses, eliminate repeated subjects, use compact inline notation (`·`).
 Do not swap synonyms, swap voice, or convert to markdown tables — zero savings.
+Replace markdown scaffolding (headers, bold, bullet prefixes, blank lines between sections) with lighter delimiters (colons, newlines, `·`) where possible.
 Preserve all meaning. Do not add interpretation. Output only the compressed text.
 
 Input:
@@ -28,15 +29,3 @@ Runtime failures trigger a clean shutdown. The application does not attempt hot 
 
 Output:
 All failures → clean exit. Init failures (WASAPI, DX12, etc.) reported via logging if available, otherwise stderr/message box. Runtime failures: no hot recovery; user restarts. Acceptable for a calibration utility that is not a long-running service.
-
-Input:
-Canopus is a calibration and training desktop application for rhythm game players. It runs as a full-screen or windowed application with multiple navigable scenes.
-
-### Scenes
-
-Scene list is not closed/fixed.
-
-Output:
-Canopus: calibration/training desktop app for rhythm game players · full-screen or windowed, multiple navigable scenes.
-### Scenes
-Scene list is not closed/fixed.

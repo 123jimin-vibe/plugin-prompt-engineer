@@ -51,13 +51,17 @@ The H5 examples themselves contain meaning drift. Example 1 compresses "`camelCa
 
 **Prediction:** Replacing drifted examples with drift-free examples will reduce the model's drift rate without needing additional rules.
 
-**Result:** Refuted. Drift-free examples reduced compression (5.0%/5.2% vs 8.0%/6.7%) without reducing drift (1 → 1, same item). Minor issues increased (9 → 12). The drifted portions of the examples were entangled with the aggressive compression they demonstrated; removing drift also removed the compression signal. See F3.
+**Result:** Refuted as stated. Drift-free examples reduced compression (5.0%/5.2% vs 8.0%/6.7%) without reducing drift (1 → 1, same item). Minor issues increased (9 → 12). The drifted portions of the examples were entangled with the aggressive compression they demonstrated; removing drift also removed the compression signal. See F3.
 
-### H7: Explicit compression target
+**Resolution (v3):** Rather than replacing the drifted examples, a 4th example from non-test data was added targeting the specific blind spot (intro paragraph preservation). This eliminated all drift (0 vs 1) while keeping compression within 1pp of v2 on non-intro items. The approach works because the 4th example teaches a pattern without diluting the aggression signal from the original 3 examples. See F6.
+
+### H7: Explicit compression target — REFUTED
 
 The current prompt says "compress" open-endedly. GPT-5.4 plays it safe (8.5% baseline). Specifying a target ratio (e.g. "reduce by 30-50%") might push the model past its conservative default without needing structural instructions.
 
 **Prediction:** Adding a numeric compression target will increase compression ratio without proportionally increasing drift.
+
+**Result:** Refuted. Sent +0.4pp (negligible), para -1.0pp (worse). The model ignored the numeric target entirely — few-shot examples remain the dominant compression signal. See F4.
 
 ### H8: Negative examples
 
@@ -77,8 +81,10 @@ First pass restructures, second pass catches remaining verbosity. The model migh
 
 **Prediction:** A second compression pass on already-compressed output will yield additional 5-15% reduction with minimal new drift.
 
-### H11: Strip markdown scaffolding
+### H11: Strip markdown scaffolding — REFUTED
 
 Headers (`##`), bold (`**`), bullet prefixes (`- `), blank lines between sections — all cost tokens. Replacing them with lighter delimiters (colons, newlines) might yield compression that the model doesn't attempt because it treats formatting as immutable.
 
 **Prediction:** Explicitly instructing the model to replace markdown formatting with lighter alternatives will yield measurable token savings on paragraph-level and document-level items where scaffolding is a larger share of total tokens.
+
+**Result:** Refuted at aggregate level. Sent -1.5pp (worse), para -0.2pp (flat). Some items saved tokens by stripping bold/section breaks (para-11 -14, para-16 -10) but gains were offset by the model being more conservative elsewhere. The instruction redistributes tokens rather than reducing them. See F5.
